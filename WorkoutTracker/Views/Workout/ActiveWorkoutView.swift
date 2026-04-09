@@ -99,6 +99,9 @@ struct ActiveWorkoutView: View {
     private func finishWorkout() {
         workout.durationSeconds = elapsedSeconds
         workout.isCompleted = true
+        // If this workout was started from a split, advance the rotation so the next
+        // visit to the split detail view shows the following routine as "Next".
+        workout.sourceSplit?.advance()
         try? modelContext.save()
         dismiss()
     }

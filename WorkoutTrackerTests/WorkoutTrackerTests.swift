@@ -20,6 +20,8 @@ final class WorkoutTrackerTests: XCTestCase {
             CardioEntry.self,
             Routine.self,
             RoutineExercise.self,
+            TrainingSplit.self,
+            SplitRoutine.self,
         ])
         // Unique name per test isolates SwiftData's PersistentIdentifier state across runs.
         // Without this, in-memory containers share global registration and tests crash with
@@ -396,6 +398,117 @@ final class WorkoutTrackerTests: XCTestCase {
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<RoutineExercise>()), 0)
         // Template must survive — routines only borrow templates by reference.
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<ExerciseTemplate>()), 1)
+    }
+
+    // MARK: - TrainingSplit
+
+    func testSplitInitDefaults() {
+        let split = TrainingSplit(name: "PPL")
+        XCTAssertEqual(split.name, "PPL")
+        XCTAssertEqual(split.currentIndex, 0)
+        XCTAssertTrue(split.routines.isEmpty)
+        XCTAssertNil(split.nextRoutine)
+    }
+
+    func testSplitAdvanceWrapsAtEnd() throws {
+        let split = TrainingSplit(name: "PPL")
+        let push = Routine(name: "Push")
+        let pull = Routine(name: "Pull")
+        let legs = Routine(name: "Legs")
+        context.insert(split)
+        context.insert(push); context.insert(pull); context.insert(legs)
+
+        for (i, r) in [push, pull, legs].enumerated() {
+            let entry = SplitRoutine(order: i)
+            split.routines.append(entry)
+            entry.routine = r
+        }
+        try context.save()
+
+        XCTAssertEqual(split.nextRoutine?.name, "Push")
+        split.advance()
+        XCTAssertEqual(split.currentIndex, 1)
+        XCTAssertEqual(split.nextRoutine?.name, "Pull")
+        split.advance()
+        XCTAssertEqual(split.nextRoutine?.name, "Legs")
+        split.advance()
+        // Wraps back to start.
+        XCTAssertEqual(split.currentIndex, 0)
+        XCTAssertEqual(split.nextRoutine?.name, "Push")
+    }
+
+    func testSplitAdvanceIsNoOpWhenEmpty() {
+        let split = TrainingSplit(name: "Empty")
+        split.advance()
+        XCTAssertEqual(split.currentIndex, 0)
+    }
+
+    func testDeletingSplitDoesNotDeleteRoutines() throws {
+        let split = TrainingSplit(name: "PPL")
+        let push = Routine(name: "Push")
+        context.insert(split); context.insert(push)
+
+        let entry = SplitRoutine(order: 0)
+        split.routines.append(entry)
+        entry.routine = push
+        try context.save()
+
+        // Manual cascade — see note in cascade tests above.
+        for e in split.routines { context.delete(e) }
+        context.delete(split)
+        try context.save()
+
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<TrainingSplit>()), 0)
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<SplitRoutine>()), 0)
+        // The routine itself must survive — splits only borrow routines by reference.
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<Routine>()), 1)
+    }
+
+    func testDeletingRoutineNullifiesSplitEntry() throws {
+        let split = TrainingSplit(name: "PPL")
+        let push = Routine(name: "Push")
+        context.insert(split); context.insert(push)
+
+        let entry = SplitRoutine(order: 0)
+        split.routines.append(entry)
+        entry.routine = push
+        try context.save()
+
+        context.delete(push)
+        try context.save()
+
+        // Entry survives but its routine reference is nil.
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<SplitRoutine>()), 1)
+        XCTAssertNil(split.routines.first?.routine)
+        XCTAssertNil(split.nextRoutine)
+    }
+
+    func testFinishingWorkoutFromSplitAdvancesRotation() throws {
+        // Mirrors what ActiveWorkoutView.finishWorkout() does: stamp sourceSplit on the
+        // workout, then on finish call sourceSplit?.advance().
+        let split = TrainingSplit(name: "PPL")
+        let push = Routine(name: "Push")
+        let pull = Routine(name: "Pull")
+        context.insert(split); context.insert(push); context.insert(pull)
+        for (i, r) in [push, pull].enumerated() {
+            let entry = SplitRoutine(order: i)
+            split.routines.append(entry)
+            entry.routine = r
+        }
+
+        let workout = Workout()
+        context.insert(workout)
+        workout.sourceSplit = split
+        try context.save()
+
+        XCTAssertEqual(split.currentIndex, 0)
+        // Simulate finish.
+        workout.isCompleted = true
+        workout.sourceSplit?.advance()
+        try context.save()
+
+        XCTAssertEqual(split.currentIndex, 1)
+        XCTAssertEqual(split.nextRoutine?.name, "Pull")
     }
 
     func testDeletingCustomExerciseNullifiesRoutineEntry() throws {

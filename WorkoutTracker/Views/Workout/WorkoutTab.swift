@@ -11,12 +11,16 @@ struct WorkoutTab: View {
     @State private var activeWorkout: Workout?
     @State private var showActiveWorkout = false
     @State private var showRoutineForm = false
+    @State private var showSplitForm = false
 
     @Query(sort: \Workout.date, order: .reverse)
     private var allWorkouts: [Workout]
 
     @Query(sort: \Routine.dateCreated, order: .reverse)
     private var routines: [Routine]
+
+    @Query(sort: \TrainingSplit.dateCreated, order: .reverse)
+    private var splits: [TrainingSplit]
 
     private var inProgressWorkout: Workout? {
         allWorkouts.first { !$0.isCompleted }
@@ -25,6 +29,37 @@ struct WorkoutTab: View {
     var body: some View {
         NavigationStack {
             List {
+                Section("Splits") {
+                    if splits.isEmpty {
+                        Text("Group routines into a rotation (e.g. PPL).")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(splits) { split in
+                            NavigationLink(value: split) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(split.name)
+                                    if let next = split.nextRoutine {
+                                        Text("Next: \(next.name)")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    } else {
+                                        Text("\(split.routines.count) routine\(split.routines.count == 1 ? "" : "s")")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Button {
+                        showSplitForm = true
+                    } label: {
+                        Label("New Split", systemImage: "plus.circle.fill")
+                    }
+                    .disabled(routines.isEmpty)
+                }
+
                 Section("Routines") {
                     if routines.isEmpty {
                         Text("No routines yet. Create one to start workouts faster.")
@@ -63,8 +98,14 @@ struct WorkoutTab: View {
             .navigationDestination(for: Routine.self) { routine in
                 RoutineDetailView(routine: routine)
             }
+            .navigationDestination(for: TrainingSplit.self) { split in
+                SplitDetailView(split: split)
+            }
             .sheet(isPresented: $showRoutineForm) {
                 RoutineFormView()
+            }
+            .sheet(isPresented: $showSplitForm) {
+                SplitFormView()
             }
             .fullScreenCover(isPresented: $showActiveWorkout) {
                 if let workout = activeWorkout {

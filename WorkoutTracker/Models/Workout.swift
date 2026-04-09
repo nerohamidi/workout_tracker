@@ -28,6 +28,11 @@ final class Workout {
     @Relationship(deleteRule: .cascade)
     var exercises: [WorkoutExercise] = []
 
+    /// The split this workout was started from, if any. Used by `ActiveWorkoutView` to
+    /// advance the split's rotation when the workout is finished. Nullable so deleting
+    /// the split doesn't delete past workouts.
+    var sourceSplit: TrainingSplit?
+
     /// Human-readable duration string. Examples: `"45m"`, `"1h 12m"`.
     var formattedDuration: String {
         let hours = durationSeconds / 3600

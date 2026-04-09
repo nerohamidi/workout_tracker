@@ -22,6 +22,11 @@ final class Routine {
     @Relationship(deleteRule: .cascade)
     var exercises: [RoutineExercise] = []
 
+    /// Inverse of `SplitRoutine.routine`. Nullify so deleting a routine just removes it
+    /// from any splits that referenced it (rather than taking those splits down too).
+    @Relationship(deleteRule: .nullify)
+    var splitEntries: [SplitRoutine] = []
+
     /// Exercises in display order (by `RoutineExercise.order`).
     var sortedExercises: [RoutineExercise] {
         exercises.sorted { $0.order < $1.order }

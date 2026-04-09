@@ -2,10 +2,12 @@ import SwiftUI
 import SwiftData
 
 struct ExercisesTab: View {
+    @Environment(\.modelContext) private var modelContext
     @Query(sort: \ExerciseTemplate.name) private var exercises: [ExerciseTemplate]
     @State private var searchText = ""
     @State private var selectedCategory: ExerciseCategory?
     @State private var showAddForm = false
+    @State private var exerciseToDelete: ExerciseTemplate?
 
     private var filteredExercises: [ExerciseTemplate] {
         exercises.filter { exercise in
@@ -59,6 +61,17 @@ struct ExercisesTab: View {
                                         .clipShape(Capsule())
                                 }
                             }
+                            // Only custom exercises can be deleted — built-in library
+                            // entries are not removable so the catalog stays consistent.
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                if exercise.isCustom {
+                                    Button(role: .destructive) {
+                                        exerciseToDelete = exercise
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -74,6 +87,22 @@ struct ExercisesTab: View {
             }
             .sheet(isPresented: $showAddForm) {
                 AddExerciseForm()
+            }
+            .alert("Delete \(exerciseToDelete?.name ?? "exercise")?",
+                   isPresented: Binding(
+                    get: { exerciseToDelete != nil },
+                    set: { if !$0 { exerciseToDelete = nil } }
+                   )) {
+                Button("Cancel", role: .cancel) { exerciseToDelete = nil }
+                Button("Delete", role: .destructive) {
+                    if let exercise = exerciseToDelete {
+                        modelContext.delete(exercise)
+                        try? modelContext.save()
+                    }
+                    exerciseToDelete = nil
+                }
+            } message: {
+                Text("Past workouts that used this exercise will keep their entries but lose the exercise name.")
             }
         }
     }

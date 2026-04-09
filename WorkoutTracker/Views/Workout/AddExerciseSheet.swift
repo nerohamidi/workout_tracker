@@ -9,6 +9,8 @@ struct AddExerciseSheet: View {
     @Query(sort: \ExerciseTemplate.name) private var allExercises: [ExerciseTemplate]
     @State private var searchText = ""
     @State private var selectedCategory: ExerciseCategory?
+    @State private var multiSelectMode = false
+    @State private var selectedExercises: Set<PersistentIdentifier> = []
 
     private var filteredExercises: [ExerciseTemplate] {
         allExercises.filter { exercise in
@@ -45,21 +47,69 @@ struct AddExerciseSheet: View {
                 ForEach(groupedExercises, id: \.0) { group, exercises in
                     Section(group.rawValue) {
                         ForEach(exercises) { exercise in
-                            ExerciseRowButton(exercise: exercise) {
-                                addExercise(exercise)
+                            ExerciseRow(
+                                exercise: exercise,
+                                multiSelectMode: multiSelectMode,
+                                isSelected: selectedExercises.contains(exercise.persistentModelID)
+                            ) {
+                                handleTap(exercise)
                             }
                         }
                     }
                 }
             }
             .searchable(text: $searchText, prompt: "Search exercises")
-            .navigationTitle("Add Exercise")
+            .navigationTitle(multiSelectMode ? "Select Exercises" : "Add Exercise")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") { dismiss() }
+                    Button(multiSelectMode ? "Cancel" : "Done") {
+                        if multiSelectMode {
+                            selectedExercises.removeAll()
+                            multiSelectMode = false
+                        } else {
+                            dismiss()
+                        }
+                    }
+                }
+                ToolbarItem(placement: .primaryAction) {
+                    if multiSelectMode {
+                        Button("Add (\(selectedExercises.count))") {
+                            addSelectedExercises()
+                            dismiss()
+                        }
+                        .fontWeight(.semibold)
+                        .disabled(selectedExercises.isEmpty)
+                    } else {
+                        Button {
+                            multiSelectMode = true
+                        } label: {
+                            Image(systemName: "checklist")
+                        }
+                    }
                 }
             }
+        }
+    }
+
+    private func handleTap(_ exercise: ExerciseTemplate) {
+        if multiSelectMode {
+            let id = exercise.persistentModelID
+            if selectedExercises.contains(id) {
+                selectedExercises.remove(id)
+            } else {
+                selectedExercises.insert(id)
+            }
+        } else {
+            addExercise(exercise)
+            dismiss()
+        }
+    }
+
+    private func addSelectedExercises() {
+        let exercisesToAdd = allExercises.filter { selectedExercises.contains($0.persistentModelID) }
+        for exercise in exercisesToAdd {
+            addExercise(exercise)
         }
     }
 
@@ -82,13 +132,19 @@ struct AddExerciseSheet: View {
     }
 }
 
-private struct ExerciseRowButton: View {
+private struct ExerciseRow: View {
     let exercise: ExerciseTemplate
+    let multiSelectMode: Bool
+    let isSelected: Bool
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             HStack {
+                if multiSelectMode {
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        .foregroundStyle(isSelected ? Color.accentColor : .secondary)
+                }
                 Text(exercise.name)
                     .foregroundStyle(.primary)
                 Spacer()
@@ -97,8 +153,10 @@ private struct ExerciseRowButton: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                Image(systemName: "plus.circle")
-                    .foregroundStyle(.tint)
+                if !multiSelectMode {
+                    Image(systemName: "plus.circle")
+                        .foregroundStyle(.tint)
+                }
             }
         }
     }

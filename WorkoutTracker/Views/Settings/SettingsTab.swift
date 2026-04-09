@@ -29,7 +29,7 @@ struct SettingsTab: View {
                 }
 
                 Section("About") {
-                    LabeledContent("Version", value: "1.2.1")
+                    LabeledContent("Version", value: "1.2.2")
                     LabeledContent("App", value: "Workout Tracker")
                 }
             }

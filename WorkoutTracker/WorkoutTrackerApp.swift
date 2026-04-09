@@ -14,13 +14,26 @@ struct WorkoutTrackerApp: App {
             CardioEntry.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+
+        let container: ModelContainer
         do {
-            let container = try ModelContainer(for: schema, configurations: [modelConfiguration])
-            ExerciseLibrary.seedIfNeeded(modelContext: container.mainContext)
-            self.sharedModelContainer = container
+            container = try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            // Schema mismatch from prior runs — delete the old store and retry
+            let url = modelConfiguration.url
+            let relatedFiles = [url, url.deletingPathExtension().appendingPathExtension("store-shm"), url.deletingPathExtension().appendingPathExtension("store-wal")]
+            for file in relatedFiles {
+                try? FileManager.default.removeItem(at: file)
+            }
+            do {
+                container = try ModelContainer(for: schema, configurations: [modelConfiguration])
+            } catch {
+                fatalError("Could not create ModelContainer: \(error)")
+            }
         }
+
+        ExerciseLibrary.seedIfNeeded(modelContext: container.mainContext)
+        self.sharedModelContainer = container
     }
 
     var body: some Scene {

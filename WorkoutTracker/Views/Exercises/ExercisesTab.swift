@@ -44,21 +44,23 @@ struct ExercisesTab: View {
                 ForEach(groupedExercises, id: \.0) { group, exercises in
                     Section(group.rawValue) {
                         ForEach(exercises) { exercise in
-                            HStack {
-                                VStack(alignment: .leading) {
-                                    Text(exercise.name)
-                                    Text(exercise.category.rawValue)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                if exercise.isCustom {
-                                    Text("Custom")
-                                        .font(.caption2)
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 2)
-                                        .background(.fill)
-                                        .clipShape(Capsule())
+                            NavigationLink(value: exercise) {
+                                HStack {
+                                    VStack(alignment: .leading) {
+                                        Text(exercise.name)
+                                        Text(exercise.category.rawValue)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    if exercise.isCustom {
+                                        Text("Custom")
+                                            .font(.caption2)
+                                            .padding(.horizontal, 8)
+                                            .padding(.vertical, 2)
+                                            .background(.fill)
+                                            .clipShape(Capsule())
+                                    }
                                 }
                             }
                             // Only custom exercises can be deleted — built-in library
@@ -77,6 +79,9 @@ struct ExercisesTab: View {
                 }
             }
             .searchable(text: $searchText, prompt: "Search exercises")
+            .navigationDestination(for: ExerciseTemplate.self) { template in
+                ExerciseDetailView(template: template)
+            }
             .navigationTitle("Exercises")
             .toolbar {
                 Button {

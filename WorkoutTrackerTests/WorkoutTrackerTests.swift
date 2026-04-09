@@ -400,6 +400,117 @@ final class WorkoutTrackerTests: XCTestCase {
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<ExerciseTemplate>()), 1)
     }
 
+    // MARK: - PersonalRecord
+
+    /// Helper: append a finished workout to the test context with the given sets.
+    @discardableResult
+    private func makeFinishedWorkout(
+        template: ExerciseTemplate,
+        sets: [(reps: Int, weight: Double)],
+        date: Date = .now
+    ) throws -> Workout {
+        let workout = Workout(date: date)
+        workout.isCompleted = true
+        context.insert(workout)
+
+        let exercise = WorkoutExercise(order: 0)
+        workout.exercises.append(exercise)
+        exercise.exerciseTemplate = template
+
+        for (i, s) in sets.enumerated() {
+            exercise.sets.append(ExerciseSet(setNumber: i + 1, reps: s.reps, weight: s.weight))
+        }
+        try context.save()
+        return workout
+    }
+
+    func testPersonalRecordsEmptyForNoHistory() {
+        let template = ExerciseTemplate(name: "Bench Press", category: .strength, muscleGroup: .chest)
+        XCTAssertTrue(PersonalRecord.records(for: template).isEmpty)
+    }
+
+    func testPersonalRecordsEmptyForCardio() throws {
+        let template = ExerciseTemplate(name: "Running", category: .cardio, muscleGroup: .cardio)
+        context.insert(template)
+        XCTAssertTrue(PersonalRecord.records(for: template).isEmpty)
+    }
+
+    func testPersonalRecordsTakesMaxPerRepCount() throws {
+        let template = ExerciseTemplate(name: "Bench Press", category: .strength, muscleGroup: .chest)
+        context.insert(template)
+
+        // Workout 1: 5x100, 5x95, 10x70
+        try makeFinishedWorkout(template: template, sets: [
+            (5, 100), (5, 95), (10, 70)
+        ])
+        // Workout 2: 5x105 (new 5RM PR), 1x120 (only 1RM), 10x65 (worse than 70)
+        try makeFinishedWorkout(template: template, sets: [
+            (5, 105), (1, 120), (10, 65)
+        ])
+
+        let records = PersonalRecord.records(for: template)
+        // Three rep counts: 1, 5, 10
+        XCTAssertEqual(records.map(\.reps), [1, 5, 10])
+        XCTAssertEqual(records.first(where: { $0.reps == 1 })?.weight, 120)
+        XCTAssertEqual(records.first(where: { $0.reps == 5 })?.weight, 105)
+        XCTAssertEqual(records.first(where: { $0.reps == 10 })?.weight, 70)
+    }
+
+    func testPersonalRecordsIgnoresInProgressWorkouts() throws {
+        let template = ExerciseTemplate(name: "Squat", category: .strength, muscleGroup: .legs)
+        context.insert(template)
+
+        // In-progress workout with a heavy lift — should NOT count.
+        let inProgress = Workout()
+        inProgress.isCompleted = false
+        context.insert(inProgress)
+        let we = WorkoutExercise(order: 0)
+        inProgress.exercises.append(we)
+        we.exerciseTemplate = template
+        we.sets.append(ExerciseSet(setNumber: 1, reps: 5, weight: 200))
+        try context.save()
+
+        // Completed workout with a lighter lift — this should win.
+        try makeFinishedWorkout(template: template, sets: [(5, 150)])
+
+        let records = PersonalRecord.records(for: template)
+        XCTAssertEqual(records.count, 1)
+        XCTAssertEqual(records.first?.weight, 150)
+    }
+
+    func testPersonalRecordsIgnoresZeroWeightOrZeroReps() throws {
+        let template = ExerciseTemplate(name: "Deadlift", category: .strength, muscleGroup: .back)
+        context.insert(template)
+
+        try makeFinishedWorkout(template: template, sets: [
+            (0, 100), // zero reps — skip
+            (5, 0),   // zero weight — skip
+            (3, 140)  // valid
+        ])
+
+        let records = PersonalRecord.records(for: template)
+        XCTAssertEqual(records.count, 1)
+        XCTAssertEqual(records.first?.reps, 3)
+        XCTAssertEqual(records.first?.weight, 140)
+    }
+
+    func testPersonalRecordsTieGoesToEarlierDate() throws {
+        let template = ExerciseTemplate(name: "OHP", category: .strength, muscleGroup: .shoulders)
+        context.insert(template)
+
+        let earlier = Date(timeIntervalSince1970: 1_700_000_000)
+        let later = earlier.addingTimeInterval(86400 * 7)
+
+        // Earlier workout hits 5x60 first.
+        try makeFinishedWorkout(template: template, sets: [(5, 60)], date: earlier)
+        // Later workout ties at 5x60.
+        try makeFinishedWorkout(template: template, sets: [(5, 60)], date: later)
+
+        let records = PersonalRecord.records(for: template)
+        XCTAssertEqual(records.count, 1)
+        XCTAssertEqual(records.first?.date, earlier, "Tie should preserve the earlier date")
+    }
+
     // MARK: - TrainingSplit
 
     func testSplitInitDefaults() {

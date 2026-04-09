@@ -3,9 +3,12 @@ import SwiftData
 
 struct HistoryTab: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(filter: #Predicate<Workout> { $0.isCompleted },
-           sort: \Workout.date, order: .reverse)
-    private var workouts: [Workout]
+    @Query(sort: \Workout.date, order: .reverse)
+    private var allWorkouts: [Workout]
+
+    private var workouts: [Workout] {
+        allWorkouts.filter { $0.isCompleted }
+    }
 
     var body: some View {
         NavigationStack {

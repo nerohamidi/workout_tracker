@@ -8,7 +8,7 @@ final class Workout {
     var durationSeconds: Int
     var isCompleted: Bool
 
-    @Relationship(deleteRule: .cascade, inverse: \WorkoutExercise.workout)
+    @Relationship(deleteRule: .cascade)
     var exercises: [WorkoutExercise] = []
 
     var formattedDuration: String {

@@ -24,7 +24,7 @@ final class ExerciseTemplate {
     var muscleGroup: MuscleGroup
     var isCustom: Bool
 
-    @Relationship(deleteRule: .deny, inverse: \WorkoutExercise.exerciseTemplate)
+    @Relationship(deleteRule: .nullify)
     var workoutExercises: [WorkoutExercise] = []
 
     init(name: String, category: ExerciseCategory, muscleGroup: MuscleGroup, isCustom: Bool = false) {

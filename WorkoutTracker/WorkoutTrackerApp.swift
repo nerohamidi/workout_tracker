@@ -3,7 +3,9 @@ import SwiftData
 
 @main
 struct WorkoutTrackerApp: App {
-    var sharedModelContainer: ModelContainer = {
+    let sharedModelContainer: ModelContainer
+
+    init() {
         let schema = Schema([
             ExerciseTemplate.self,
             Workout.self,
@@ -13,20 +15,17 @@ struct WorkoutTrackerApp: App {
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            let container = try ModelContainer(for: schema, configurations: [modelConfiguration])
+            ExerciseLibrary.seedIfNeeded(modelContext: container.mainContext)
+            self.sharedModelContainer = container
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }
-    }()
+    }
 
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .onAppear {
-                    ExerciseLibrary.seedIfNeeded(
-                        modelContext: sharedModelContainer.mainContext
-                    )
-                }
         }
         .modelContainer(sharedModelContainer)
     }

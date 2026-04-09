@@ -7,10 +7,10 @@ final class WorkoutExercise {
     var exerciseTemplate: ExerciseTemplate?
     var workout: Workout?
 
-    @Relationship(deleteRule: .cascade, inverse: \ExerciseSet.workoutExercise)
+    @Relationship(deleteRule: .cascade)
     var sets: [ExerciseSet] = []
 
-    @Relationship(deleteRule: .cascade, inverse: \CardioEntry.workoutExercise)
+    @Relationship(deleteRule: .cascade)
     var cardioEntries: [CardioEntry] = []
 
     var sortedSets: [ExerciseSet] {

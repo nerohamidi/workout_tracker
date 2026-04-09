@@ -6,9 +6,12 @@ struct WorkoutTab: View {
     @State private var activeWorkout: Workout?
     @State private var showActiveWorkout = false
 
-    @Query(filter: #Predicate<Workout> { !$0.isCompleted },
-           sort: \Workout.date, order: .reverse)
-    private var inProgressWorkouts: [Workout]
+    @Query(sort: \Workout.date, order: .reverse)
+    private var allWorkouts: [Workout]
+
+    private var inProgressWorkout: Workout? {
+        allWorkouts.first { !$0.isCompleted }
+    }
 
     var body: some View {
         NavigationStack {
@@ -44,7 +47,7 @@ struct WorkoutTab: View {
                 }
             }
             .onAppear {
-                if let existing = inProgressWorkouts.first {
+                if let existing = inProgressWorkout {
                     activeWorkout = existing
                     showActiveWorkout = true
                 }

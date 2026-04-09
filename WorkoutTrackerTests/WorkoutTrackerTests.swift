@@ -18,6 +18,8 @@ final class WorkoutTrackerTests: XCTestCase {
             WorkoutExercise.self,
             ExerciseSet.self,
             CardioEntry.self,
+            Routine.self,
+            RoutineExercise.self,
         ])
         // Unique name per test isolates SwiftData's PersistentIdentifier state across runs.
         // Without this, in-memory containers share global registration and tests crash with
@@ -345,5 +347,73 @@ final class WorkoutTrackerTests: XCTestCase {
             let raw = mode.rawValue
             XCTAssertEqual(AppearanceMode(rawValue: raw), mode)
         }
+    }
+
+    // MARK: - Routine
+
+    func testRoutineInitDefaults() {
+        let before = Date()
+        let routine = Routine(name: "Push Day")
+        XCTAssertEqual(routine.name, "Push Day")
+        XCTAssertEqual(routine.notes, "")
+        XCTAssertTrue(routine.exercises.isEmpty)
+        XCTAssertGreaterThanOrEqual(routine.dateCreated, before)
+    }
+
+    func testRoutineSortedExercisesReturnsByOrderAscending() throws {
+        let routine = Routine(name: "Leg Day")
+        let template = ExerciseTemplate(name: "Squat", category: .strength, muscleGroup: .legs)
+        context.insert(routine)
+        context.insert(template)
+
+        for order in [2, 0, 1] {
+            let entry = RoutineExercise(order: order)
+            routine.exercises.append(entry)
+            entry.exerciseTemplate = template
+        }
+        try context.save()
+
+        XCTAssertEqual(routine.sortedExercises.map(\.order), [0, 1, 2])
+    }
+
+    func testDeletingRoutineDoesNotDeleteExerciseTemplate() throws {
+        let routine = Routine(name: "Pull Day")
+        let template = ExerciseTemplate(name: "Pull-ups", category: .strength, muscleGroup: .back)
+        context.insert(routine)
+        context.insert(template)
+
+        let entry = RoutineExercise(order: 0)
+        routine.exercises.append(entry)
+        entry.exerciseTemplate = template
+        try context.save()
+
+        // Manually delete (cascade is unreliable in tests; see workout cascade test).
+        for e in routine.exercises { context.delete(e) }
+        context.delete(routine)
+        try context.save()
+
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<Routine>()), 0)
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<RoutineExercise>()), 0)
+        // Template must survive — routines only borrow templates by reference.
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<ExerciseTemplate>()), 1)
+    }
+
+    func testDeletingCustomExerciseNullifiesRoutineEntry() throws {
+        let routine = Routine(name: "Custom Day")
+        let template = ExerciseTemplate(name: "My Move", category: .strength, muscleGroup: .core, isCustom: true)
+        context.insert(routine)
+        context.insert(template)
+
+        let entry = RoutineExercise(order: 0)
+        routine.exercises.append(entry)
+        entry.exerciseTemplate = template
+        try context.save()
+
+        context.delete(template)
+        try context.save()
+
+        // Entry survives but its template reference is nil.
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<RoutineExercise>()), 1)
+        XCTAssertNil(routine.exercises.first?.exerciseTemplate)
     }
 }

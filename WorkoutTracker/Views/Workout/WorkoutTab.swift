@@ -1,13 +1,22 @@
 import SwiftUI
 import SwiftData
 
+/// Primary tab. Lists the user's saved routines and provides entry points to start
+/// a new workout (either empty or from a routine) and to manage routines.
+///
+/// On appear, automatically resumes any in-progress workout — there should only ever
+/// be one at a time, so finishing or discarding it is the only way to start a new one.
 struct WorkoutTab: View {
     @Environment(\.modelContext) private var modelContext
     @State private var activeWorkout: Workout?
     @State private var showActiveWorkout = false
+    @State private var showRoutineForm = false
 
     @Query(sort: \Workout.date, order: .reverse)
     private var allWorkouts: [Workout]
+
+    @Query(sort: \Routine.dateCreated, order: .reverse)
+    private var routines: [Routine]
 
     private var inProgressWorkout: Workout? {
         allWorkouts.first { !$0.isCompleted }
@@ -15,32 +24,48 @@ struct WorkoutTab: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 24) {
-                Spacer()
-
-                Image(systemName: "figure.strengthtraining.traditional")
-                    .font(.system(size: 64))
-                    .foregroundStyle(.tint)
-
-                Text("Ready to work out?")
-                    .font(.title2)
-                    .fontWeight(.semibold)
-
-                Button {
-                    startWorkout()
-                } label: {
-                    Label("Start Workout", systemImage: "play.fill")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding()
+            List {
+                Section("Routines") {
+                    if routines.isEmpty {
+                        Text("No routines yet. Create one to start workouts faster.")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(routines) { routine in
+                            NavigationLink(value: routine) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(routine.name)
+                                    Text("\(routine.exercises.count) exercise\(routine.exercises.count == 1 ? "" : "s")")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                    }
+                    Button {
+                        showRoutineForm = true
+                    } label: {
+                        Label("New Routine", systemImage: "plus.circle.fill")
+                    }
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .padding(.horizontal, 40)
 
-                Spacer()
+                Section {
+                    Button {
+                        startWorkout()
+                    } label: {
+                        Label("Start Empty Workout", systemImage: "play.fill")
+                            .frame(maxWidth: .infinity)
+                            .fontWeight(.semibold)
+                    }
+                }
             }
             .navigationTitle("Workout")
+            .navigationDestination(for: Routine.self) { routine in
+                RoutineDetailView(routine: routine)
+            }
+            .sheet(isPresented: $showRoutineForm) {
+                RoutineFormView()
+            }
             .fullScreenCover(isPresented: $showActiveWorkout) {
                 if let workout = activeWorkout {
                     ActiveWorkoutView(workout: workout)

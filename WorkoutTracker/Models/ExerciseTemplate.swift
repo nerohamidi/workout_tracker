@@ -46,6 +46,12 @@ final class ExerciseTemplate {
     @Relationship(deleteRule: .nullify)
     var workoutExercises: [WorkoutExercise] = []
 
+    /// All routine exercises that reference this template. Same `.nullify` rule —
+    /// removing a custom exercise leaves any routines that used it intact, just
+    /// with an unnamed slot.
+    @Relationship(deleteRule: .nullify)
+    var routineExercises: [RoutineExercise] = []
+
     init(name: String, category: ExerciseCategory, muscleGroup: MuscleGroup, isCustom: Bool = false) {
         self.name = name
         self.category = category

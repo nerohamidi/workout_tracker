@@ -25,6 +25,10 @@
 		A10000010000000000000050 /* SettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000050 /* SettingsTab.swift */; };
 		A10000010000000000000060 /* ExerciseLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000060 /* ExerciseLibrary.swift */; };
 		C10000010000000000000001 /* WorkoutTrackerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000010000000000000001 /* WorkoutTrackerTests.swift */; };
+		A10000010000000000000070 /* Routine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000070 /* Routine.swift */; };
+		A10000010000000000000071 /* RoutineExercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000071 /* RoutineExercise.swift */; };
+		A10000010000000000000072 /* RoutineFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000072 /* RoutineFormView.swift */; };
+		A10000010000000000000073 /* RoutineDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000073 /* RoutineDetailView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -48,6 +52,10 @@
 		A20000010000000000000060 /* ExerciseLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseLibrary.swift; sourceTree = "<group>"; };
 		C20000010000000000000000 /* WorkoutTrackerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WorkoutTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C20000010000000000000001 /* WorkoutTrackerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutTrackerTests.swift; sourceTree = "<group>"; };
+		A20000010000000000000070 /* Routine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Routine.swift; sourceTree = "<group>"; };
+		A20000010000000000000071 /* RoutineExercise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutineExercise.swift; sourceTree = "<group>"; };
+		A20000010000000000000072 /* RoutineFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutineFormView.swift; sourceTree = "<group>"; };
+		A20000010000000000000073 /* RoutineDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutineDetailView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -106,6 +114,8 @@
 				A20000010000000000000012 /* WorkoutExercise.swift */,
 				A20000010000000000000013 /* ExerciseSet.swift */,
 				A20000010000000000000014 /* CardioEntry.swift */,
+				A20000010000000000000070 /* Routine.swift */,
+				A20000010000000000000071 /* RoutineExercise.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -127,6 +137,8 @@
 				A20000010000000000000020 /* WorkoutTab.swift */,
 				A20000010000000000000021 /* ActiveWorkoutView.swift */,
 				A20000010000000000000022 /* AddExerciseSheet.swift */,
+				A20000010000000000000072 /* RoutineFormView.swift */,
+				A20000010000000000000073 /* RoutineDetailView.swift */,
 			);
 			path = Workout;
 			sourceTree = "<group>";
@@ -281,6 +293,10 @@
 				A10000010000000000000041 /* AddExerciseForm.swift in Sources */,
 				A10000010000000000000050 /* SettingsTab.swift in Sources */,
 				A10000010000000000000060 /* ExerciseLibrary.swift in Sources */,
+				A10000010000000000000070 /* Routine.swift in Sources */,
+				A10000010000000000000071 /* RoutineExercise.swift in Sources */,
+				A10000010000000000000072 /* RoutineFormView.swift in Sources */,
+				A10000010000000000000073 /* RoutineDetailView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -452,7 +468,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.5.0;
+				MARKETING_VERSION = 1.6.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.workouttracker.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -481,7 +497,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.5.0;
+				MARKETING_VERSION = 1.6.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.workouttracker.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;

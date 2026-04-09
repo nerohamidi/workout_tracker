@@ -1,8 +1,14 @@
 import SwiftUI
+import SwiftData
 
 struct WorkoutDetailView: View {
+    @Environment(\.modelContext) private var modelContext
     let workout: Workout
     @AppStorage("useMetric") private var useMetric = true
+
+    @State private var showSaveAsRoutine = false
+    @State private var routineName = ""
+    @State private var saveConfirmation: String?
 
     var body: some View {
         List {
@@ -47,6 +53,53 @@ struct WorkoutDetailView: View {
         }
         .navigationTitle("Workout Details")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    routineName = defaultRoutineName()
+                    showSaveAsRoutine = true
+                } label: {
+                    Label("Save as Routine", systemImage: "square.and.arrow.down")
+                }
+                .disabled(workout.exercises.isEmpty)
+            }
+        }
+        .alert("Save as Routine", isPresented: $showSaveAsRoutine) {
+            TextField("Routine name", text: $routineName)
+            Button("Cancel", role: .cancel) {}
+            Button("Save") { saveAsRoutine() }
+        } message: {
+            Text("Creates a reusable routine with the same exercises as this workout.")
+        }
+        .alert("Routine Saved",
+               isPresented: Binding(get: { saveConfirmation != nil },
+                                    set: { if !$0 { saveConfirmation = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(saveConfirmation ?? "")
+        }
+    }
+
+    private func defaultRoutineName() -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        return "Routine \(formatter.string(from: workout.date))"
+    }
+
+    private func saveAsRoutine() {
+        let trimmed = routineName.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return }
+
+        let routine = Routine(name: trimmed)
+        modelContext.insert(routine)
+        for (index, exercise) in workout.sortedExercises.enumerated() {
+            guard let template = exercise.exerciseTemplate else { continue }
+            let entry = RoutineExercise(order: index)
+            routine.exercises.append(entry)
+            entry.exerciseTemplate = template
+        }
+        try? modelContext.save()
+        saveConfirmation = "\"\(trimmed)\" is now in your routines."
     }
 
     private func formatted(_ value: Double) -> String {

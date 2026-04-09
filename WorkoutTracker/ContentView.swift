@@ -1,5 +1,11 @@
 import SwiftUI
 
+/// Root view of the app — a four-tab bar containing the main screens.
+///
+/// Uses the new iOS 18+ `Tab` API when available; falls back to `.tabItem` on iOS 17.
+/// The legacy `.tabItem` modifier renders blank tabs on iOS 26 simulators, hence the split.
+///
+/// Applies the user's preferred color scheme via `@AppStorage`. Defaults to `.dark`.
 struct ContentView: View {
     @AppStorage("appearanceMode") private var appearanceMode: AppearanceMode = .dark
 
@@ -54,6 +60,7 @@ struct ContentView: View {
     }
 }
 
+/// Persisted appearance preference. Stored as a `String` raw value via `@AppStorage`.
 enum AppearanceMode: String, CaseIterable {
     case dark = "Dark"
     case light = "Light"

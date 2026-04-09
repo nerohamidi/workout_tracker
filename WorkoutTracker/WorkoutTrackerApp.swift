@@ -1,6 +1,11 @@
 import SwiftUI
 import SwiftData
 
+/// App entry point. Owns the SwiftData container and seeds the exercise library on first launch.
+///
+/// The container is created in `init()` (rather than as a stored property closure) so that
+/// seeding happens before any view queries run, which avoids races between `@Query` and
+/// the seed insert.
 @main
 struct WorkoutTrackerApp: App {
     let sharedModelContainer: ModelContainer

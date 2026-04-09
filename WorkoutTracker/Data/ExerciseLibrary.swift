@@ -1,13 +1,20 @@
 import Foundation
 import SwiftData
 
+/// Pre-built exercise catalog seeded into SwiftData on first launch.
+///
+/// The library is intentionally a static value rather than a stored model — it's the
+/// "factory default" set of exercises, and any user customization is stored separately
+/// as `ExerciseTemplate` records with `isCustom == true`.
 struct ExerciseLibrary {
+    /// A lightweight value type used only at seed time to construct `ExerciseTemplate` records.
     struct ExerciseDefinition {
         let name: String
         let category: ExerciseCategory
         let muscleGroup: MuscleGroup
     }
 
+    /// The full list of exercises seeded on first launch.
     static let exercises: [ExerciseDefinition] = [
         // Chest
         ExerciseDefinition(name: "Bench Press", category: .strength, muscleGroup: .chest),
@@ -58,6 +65,11 @@ struct ExerciseLibrary {
         ExerciseDefinition(name: "Elliptical", category: .cardio, muscleGroup: .cardio),
     ]
 
+    /// Inserts the library into the given model context if no exercise templates exist yet.
+    ///
+    /// This is idempotent: it checks the count before inserting, so calling it on an
+    /// already-seeded store is a no-op. Custom user exercises also count toward the check —
+    /// the library is only seeded into a truly empty store.
     static func seedIfNeeded(modelContext: ModelContext) {
         let descriptor = FetchDescriptor<ExerciseTemplate>()
         let count = (try? modelContext.fetchCount(descriptor)) ?? 0

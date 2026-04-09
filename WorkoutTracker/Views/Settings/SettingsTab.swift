@@ -2,10 +2,20 @@ import SwiftUI
 
 struct SettingsTab: View {
     @AppStorage("useMetric") private var useMetric = true
+    @AppStorage("appearanceMode") private var appearanceMode: AppearanceMode = .dark
 
     var body: some View {
         NavigationStack {
             Form {
+                Section("Appearance") {
+                    Picker("Theme", selection: $appearanceMode) {
+                        ForEach(AppearanceMode.allCases, id: \.self) { mode in
+                            Text(mode.rawValue).tag(mode)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+
                 Section("Units") {
                     Picker("Weight", selection: $useMetric) {
                         Text("kg").tag(true)
@@ -19,7 +29,7 @@ struct SettingsTab: View {
                 }
 
                 Section("About") {
-                    LabeledContent("Version", value: "1.0.0")
+                    LabeledContent("Version", value: "1.1.0")
                     LabeledContent("App", value: "Workout Tracker")
                 }
             }

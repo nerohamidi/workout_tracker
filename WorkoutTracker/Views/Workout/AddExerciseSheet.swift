@@ -11,6 +11,7 @@ struct AddExerciseSheet: View {
     @State private var selectedCategory: ExerciseCategory?
     @State private var multiSelectMode = false
     @State private var selectedExercises: Set<PersistentIdentifier> = []
+    @State private var showCreateExercise = false
 
     private var filteredExercises: [ExerciseTemplate] {
         allExercises.filter { exercise in
@@ -44,6 +45,14 @@ struct AddExerciseSheet: View {
                 .listRowInsets(EdgeInsets())
                 .padding(.horizontal)
 
+                Section {
+                    Button {
+                        showCreateExercise = true
+                    } label: {
+                        Label("Create New Exercise", systemImage: "plus.circle.fill")
+                    }
+                }
+
                 ForEach(groupedExercises, id: \.0) { group, exercises in
                     Section(group.rawValue) {
                         ForEach(exercises) { exercise in
@@ -61,6 +70,9 @@ struct AddExerciseSheet: View {
             .searchable(text: $searchText, prompt: "Search exercises")
             .navigationTitle(multiSelectMode ? "Select Exercises" : "Add Exercise")
             .navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $showCreateExercise) {
+                AddExerciseForm()
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(multiSelectMode ? "Cancel" : "Done") {

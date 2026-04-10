@@ -1,12 +1,12 @@
 import SwiftUI
 import SwiftData
 
-/// Lets the user describe a routine in plain English, asks Gemini to design it from
-/// the existing exercise library, then saves the result as a real `Routine`.
+/// Lets the user describe a routine in plain English, asks Gemini to design it with
+/// exercises and set schemes, then saves the result as a real `Routine` with
+/// `RoutineSet` defaults.
 ///
-/// Flow: prompt entry → loading → preview (editable list) → save. Names returned by
-/// Gemini are matched against the library by case-insensitive equality; any name we
-/// can't resolve is dropped silently and surfaced to the user as a count.
+/// If Gemini suggests exercises not in the library, they are created as custom
+/// `ExerciseTemplate` records automatically.
 struct AIRoutineSheet: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -17,12 +17,20 @@ struct AIRoutineSheet: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
 
-    /// Once Gemini responds and we resolve names → templates, we hold the editable
-    /// preview here. The user can rename and reorder before saving.
     @State private var generatedName: String = ""
-    @State private var resolvedTemplates: [ExerciseTemplate] = []
-    @State private var unresolvedNames: [String] = []
+    @State private var resolvedExercises: [ResolvedExercise] = []
     @State private var hasResult = false
+
+    /// Pairs a template (existing or to-be-created) with the AI's suggested sets.
+    struct ResolvedExercise: Identifiable {
+        let id = UUID()
+        var template: ExerciseTemplate?   // nil = will create new on save
+        var name: String
+        var category: ExerciseCategory
+        var muscleGroup: MuscleGroup
+        var sets: [(reps: Int, weight: Double)]
+        var isNew: Bool
+    }
 
     var body: some View {
         NavigationStack {
@@ -44,7 +52,7 @@ struct AIRoutineSheet: View {
                         Button("Save") { save() }
                             .fontWeight(.semibold)
                             .disabled(generatedName.trimmingCharacters(in: .whitespaces).isEmpty
-                                      || resolvedTemplates.isEmpty)
+                                      || resolvedExercises.isEmpty)
                     }
                 }
             }
@@ -61,7 +69,7 @@ struct AIRoutineSheet: View {
     @ViewBuilder
     private var promptSections: some View {
         Section {
-            Text("Describe the routine you want and Gemini will pick exercises from your library.")
+            Text("Describe the routine you want and Gemini will design it with exercises and sets.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
         }
@@ -100,37 +108,39 @@ struct AIRoutineSheet: View {
         }
 
         Section("Exercises") {
-            if resolvedTemplates.isEmpty {
-                Text("Gemini didn't pick any exercises that match your library.")
+            if resolvedExercises.isEmpty {
+                Text("No exercises generated.")
                     .foregroundStyle(.secondary)
             } else {
-                ForEach(Array(resolvedTemplates.enumerated()), id: \.offset) { _, template in
-                    HStack {
-                        Text(template.name)
-                        Spacer()
-                        Text(template.muscleGroup.rawValue)
+                ForEach(resolvedExercises) { exercise in
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text(exercise.name)
+                            Spacer()
+                            if exercise.isNew {
+                                Text("New")
+                                    .font(.caption2.weight(.semibold))
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(Color.green.opacity(0.15))
+                                    .foregroundStyle(.green)
+                                    .clipShape(Capsule())
+                            }
+                            Text(exercise.muscleGroup.rawValue)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Text(exercise.sets.map { "\($0.reps)×\(formatWeight($0.weight))kg" }
+                            .joined(separator: "  ·  "))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                 }
                 .onDelete { offsets in
-                    resolvedTemplates.remove(atOffsets: offsets)
+                    resolvedExercises.remove(atOffsets: offsets)
                 }
                 .onMove { source, dest in
-                    resolvedTemplates.move(fromOffsets: source, toOffset: dest)
-                }
-            }
-        }
-
-        if !unresolvedNames.isEmpty {
-            Section("Skipped") {
-                Text("\(unresolvedNames.count) exercise\(unresolvedNames.count == 1 ? "" : "s") didn't match your library:")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                ForEach(unresolvedNames, id: \.self) { name in
-                    Text(name)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    resolvedExercises.move(fromOffsets: source, toOffset: dest)
                 }
             }
         }
@@ -163,22 +173,22 @@ struct AIRoutineSheet: View {
                 userPrompt: trimmed,
                 availableExercises: allExercises
             )
-            // Resolve names → templates by case-insensitive match. Order is whatever
-            // Gemini returned.
-            var resolved: [ExerciseTemplate] = []
-            var unresolved: [String] = []
-            for name in result.exerciseNames {
-                if let match = allExercises.first(where: {
-                    $0.name.compare(name, options: .caseInsensitive) == .orderedSame
-                }) {
-                    resolved.append(match)
-                } else {
-                    unresolved.append(name)
-                }
-            }
             generatedName = result.name
-            resolvedTemplates = resolved
-            unresolvedNames = unresolved
+            resolvedExercises = result.exercises.map { genEx in
+                let match = allExercises.first {
+                    $0.name.compare(genEx.name, options: .caseInsensitive) == .orderedSame
+                }
+                let category = ExerciseCategory(rawValue: genEx.category) ?? .strength
+                let muscle = MuscleGroup(rawValue: genEx.muscleGroup) ?? .fullBody
+                return ResolvedExercise(
+                    template: match,
+                    name: match?.name ?? genEx.name,
+                    category: match?.category ?? category,
+                    muscleGroup: match?.muscleGroup ?? muscle,
+                    sets: genEx.sets.map { ($0.reps, $0.weight) },
+                    isNew: match == nil
+                )
+            }
             hasResult = true
         } catch {
             errorMessage = error.localizedDescription
@@ -188,21 +198,53 @@ struct AIRoutineSheet: View {
     private func resetForRetry() {
         hasResult = false
         generatedName = ""
-        resolvedTemplates = []
-        unresolvedNames = []
+        resolvedExercises = []
     }
 
     private func save() {
         let trimmed = generatedName.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
+
         let routine = Routine(name: trimmed)
         modelContext.insert(routine)
-        for (index, template) in resolvedTemplates.enumerated() {
+
+        for (index, resolved) in resolvedExercises.enumerated() {
+            // Resolve or create the ExerciseTemplate
+            let template: ExerciseTemplate
+            if let existing = resolved.template {
+                template = existing
+            } else {
+                let newTemplate = ExerciseTemplate(
+                    name: resolved.name,
+                    category: resolved.category,
+                    muscleGroup: resolved.muscleGroup,
+                    isCustom: true
+                )
+                modelContext.insert(newTemplate)
+                template = newTemplate
+            }
+
             let entry = RoutineExercise(order: index)
             routine.exercises.append(entry)
             entry.exerciseTemplate = template
+
+            // Populate default sets
+            for (setIdx, setData) in resolved.sets.enumerated() {
+                let routineSet = RoutineSet(
+                    setNumber: setIdx + 1,
+                    reps: setData.reps,
+                    weight: setData.weight
+                )
+                entry.defaultSets.append(routineSet)
+            }
         }
         try? modelContext.save()
         dismiss()
+    }
+
+    private func formatWeight(_ value: Double) -> String {
+        value.truncatingRemainder(dividingBy: 1) == 0
+            ? String(format: "%.0f", value)
+            : String(format: "%.1f", value)
     }
 }

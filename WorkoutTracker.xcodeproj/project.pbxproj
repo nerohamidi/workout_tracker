@@ -35,6 +35,7 @@
 		A10000010000000000000083 /* SplitDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000083 /* SplitDetailView.swift */; };
 		A10000010000000000000090 /* PersonalRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000090 /* PersonalRecord.swift */; };
 		A10000010000000000000091 /* ExerciseDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000091 /* ExerciseDetailView.swift */; };
+		A10000010000000000000095 /* RoutineSet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000095 /* RoutineSet.swift */; };
 		A10000010000000000000100 /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000100 /* Secrets.swift */; };
 		A10000010000000000000101 /* GeminiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000101 /* GeminiClient.swift */; };
 		A10000010000000000000102 /* AIRoutineGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000102 /* AIRoutineGenerator.swift */; };
@@ -75,6 +76,7 @@
 		A20000010000000000000083 /* SplitDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplitDetailView.swift; sourceTree = "<group>"; };
 		A20000010000000000000090 /* PersonalRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalRecord.swift; sourceTree = "<group>"; };
 		A20000010000000000000091 /* ExerciseDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseDetailView.swift; sourceTree = "<group>"; };
+		A20000010000000000000095 /* RoutineSet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutineSet.swift; sourceTree = "<group>"; };
 		A20000010000000000000100 /* Secrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secrets.swift; sourceTree = "<group>"; };
 		A20000010000000000000101 /* GeminiClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiClient.swift; sourceTree = "<group>"; };
 		A20000010000000000000102 /* AIRoutineGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIRoutineGenerator.swift; sourceTree = "<group>"; };
@@ -146,6 +148,7 @@
 				A20000010000000000000080 /* TrainingSplit.swift */,
 				A20000010000000000000081 /* SplitRoutine.swift */,
 				A20000010000000000000090 /* PersonalRecord.swift */,
+				A20000010000000000000095 /* RoutineSet.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -350,6 +353,7 @@
 				A10000010000000000000083 /* SplitDetailView.swift in Sources */,
 				A10000010000000000000090 /* PersonalRecord.swift in Sources */,
 				A10000010000000000000091 /* ExerciseDetailView.swift in Sources */,
+				A10000010000000000000095 /* RoutineSet.swift in Sources */,
 				A10000010000000000000100 /* Secrets.swift in Sources */,
 				A10000010000000000000101 /* GeminiClient.swift in Sources */,
 				A10000010000000000000102 /* AIRoutineGenerator.swift in Sources */,

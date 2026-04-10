@@ -129,7 +129,16 @@ struct SplitDetailView: View {
             workoutExercise.exerciseTemplate = template
 
             if template.category == .strength {
-                workoutExercise.sets.append(ExerciseSet(setNumber: 1))
+                let defaults = entry.sortedDefaultSets
+                if defaults.isEmpty {
+                    workoutExercise.sets.append(ExerciseSet(setNumber: 1))
+                } else {
+                    for ds in defaults {
+                        workoutExercise.sets.append(
+                            ExerciseSet(setNumber: ds.setNumber, reps: ds.reps, weight: ds.weight)
+                        )
+                    }
+                }
             } else {
                 workoutExercise.cardioEntries.append(CardioEntry())
             }

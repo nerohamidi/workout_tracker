@@ -19,6 +19,17 @@ final class RoutineExercise {
     /// The parent routine. Optional for the same reason as `exerciseTemplate`.
     var routine: Routine?
 
+    /// Default sets for this exercise slot. Cascade-deleted with the routine exercise.
+    /// When a workout is started from the routine, these are copied into `ExerciseSet`
+    /// records on the new `WorkoutExercise`.
+    @Relationship(deleteRule: .cascade)
+    var defaultSets: [RoutineSet] = []
+
+    /// Default sets in display order (by `setNumber`).
+    var sortedDefaultSets: [RoutineSet] {
+        defaultSets.sorted { $0.setNumber < $1.setNumber }
+    }
+
     init(order: Int, exerciseTemplate: ExerciseTemplate? = nil, routine: Routine? = nil) {
         self.order = order
         self.exerciseTemplate = exerciseTemplate

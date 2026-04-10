@@ -1,23 +1,39 @@
 import SwiftUI
 import SwiftData
 
-/// Lets the user describe a training split in plain English and asks Gemini to compose
-/// a rotation from existing routines. Mirrors `AIRoutineSheet`'s prompt → loading →
-/// preview → save flow.
+/// Lets the user describe a full training split in plain English and Gemini generates
+/// everything: routines, exercises (creating new ones if needed), and set schemes.
+/// No pre-existing routines are required.
 struct AISplitSheet: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
-    @Query(sort: \Routine.dateCreated, order: .reverse) private var allRoutines: [Routine]
+    @Query(sort: \ExerciseTemplate.name) private var allExercises: [ExerciseTemplate]
 
     @State private var userPrompt: String = ""
     @State private var isLoading = false
     @State private var errorMessage: String?
 
     @State private var generatedName: String = ""
-    @State private var resolvedRoutines: [Routine] = []
-    @State private var unresolvedNames: [String] = []
+    @State private var resolvedRoutines: [ResolvedRoutine] = []
     @State private var hasResult = false
+
+    /// A routine in the preview, with its resolved exercises.
+    struct ResolvedRoutine: Identifiable {
+        let id = UUID()
+        var name: String
+        var exercises: [ResolvedExercise]
+    }
+
+    struct ResolvedExercise: Identifiable {
+        let id = UUID()
+        var template: ExerciseTemplate?
+        var name: String
+        var category: ExerciseCategory
+        var muscleGroup: MuscleGroup
+        var sets: [(reps: Int, weight: Double)]
+        var isNew: Bool
+    }
 
     var body: some View {
         NavigationStack {
@@ -56,20 +72,14 @@ struct AISplitSheet: View {
     @ViewBuilder
     private var promptSections: some View {
         Section {
-            if allRoutines.isEmpty {
-                Text("Create some routines first — Gemini composes a split out of them.")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-            } else {
-                Text("Describe the split you want and Gemini will arrange your routines into a rotation.")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-            }
+            Text("Describe the split you want and Gemini will generate all routines, exercises, and sets from scratch.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
         }
 
         Section("Prompt") {
             TextField(
-                "e.g. 4-day upper/lower for strength",
+                "e.g. 6-day PPL split for hypertrophy",
                 text: $userPrompt,
                 axis: .vertical
             )
@@ -90,51 +100,47 @@ struct AISplitSheet: View {
                         .fontWeight(.semibold)
                 }
             }
-            .disabled(isLoading
-                      || allRoutines.isEmpty
-                      || userPrompt.trimmingCharacters(in: .whitespaces).isEmpty)
+            .disabled(isLoading || userPrompt.trimmingCharacters(in: .whitespaces).isEmpty)
         }
     }
 
     @ViewBuilder
     private var resultSections: some View {
-        Section("Name") {
+        Section("Split Name") {
             TextField("Split name", text: $generatedName)
         }
 
-        Section("Rotation") {
-            if resolvedRoutines.isEmpty {
-                Text("Gemini didn't pick any routines that match yours.")
-                    .foregroundStyle(.secondary)
-            } else {
-                ForEach(Array(resolvedRoutines.enumerated()), id: \.offset) { index, routine in
-                    HStack {
-                        Text("\(index + 1).")
-                            .foregroundStyle(.secondary)
-                            .monospacedDigit()
-                        Text(routine.name)
-                        Spacer()
-                        Text("\(routine.exercises.count) ex")
+        ForEach(Array(resolvedRoutines.enumerated()), id: \.element.id) { routineIdx, routine in
+            Section {
+                ForEach(routine.exercises) { exercise in
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text(exercise.name)
+                            Spacer()
+                            if exercise.isNew {
+                                Text("New")
+                                    .font(.caption2.weight(.semibold))
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(Color.green.opacity(0.15))
+                                    .foregroundStyle(.green)
+                                    .clipShape(Capsule())
+                            }
+                            Text(exercise.muscleGroup.rawValue)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Text(exercise.sets.map { "\($0.reps)×\(formatWeight($0.weight))kg" }
+                            .joined(separator: "  ·  "))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                 }
-                .onDelete { offsets in
-                    resolvedRoutines.remove(atOffsets: offsets)
-                }
-                .onMove { source, dest in
-                    resolvedRoutines.move(fromOffsets: source, toOffset: dest)
-                }
-            }
-        }
-
-        if !unresolvedNames.isEmpty {
-            Section("Skipped") {
-                Text("\(unresolvedNames.count) routine\(unresolvedNames.count == 1 ? "" : "s") didn't match yours:")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                ForEach(unresolvedNames, id: \.self) { name in
-                    Text(name)
+            } header: {
+                HStack {
+                    Text("\(routineIdx + 1). \(routine.name)")
+                    Spacer()
+                    Text("\(routine.exercises.count) exercises")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -167,24 +173,27 @@ struct AISplitSheet: View {
         do {
             let result = try await AISplitGenerator.generate(
                 userPrompt: trimmed,
-                availableRoutines: allRoutines
+                availableExercises: allExercises
             )
-            // Resolve names → routines. Allow duplicates (Gemini may put the same
-            // routine in multiple slots — that's the whole point of e.g. PPL twice).
-            var resolved: [Routine] = []
-            var unresolved: [String] = []
-            for name in result.routineNames {
-                if let match = allRoutines.first(where: {
-                    $0.name.compare(name, options: .caseInsensitive) == .orderedSame
-                }) {
-                    resolved.append(match)
-                } else {
-                    unresolved.append(name)
-                }
-            }
             generatedName = result.name
-            resolvedRoutines = resolved
-            unresolvedNames = unresolved
+            resolvedRoutines = result.routines.map { genRoutine in
+                let exercises = genRoutine.exercises.map { genEx -> ResolvedExercise in
+                    let match = allExercises.first {
+                        $0.name.compare(genEx.name, options: .caseInsensitive) == .orderedSame
+                    }
+                    let category = ExerciseCategory(rawValue: genEx.category) ?? .strength
+                    let muscle = MuscleGroup(rawValue: genEx.muscleGroup) ?? .fullBody
+                    return ResolvedExercise(
+                        template: match,
+                        name: match?.name ?? genEx.name,
+                        category: match?.category ?? category,
+                        muscleGroup: match?.muscleGroup ?? muscle,
+                        sets: genEx.sets.map { ($0.reps, $0.weight) },
+                        isNew: match == nil
+                    )
+                }
+                return ResolvedRoutine(name: genRoutine.name, exercises: exercises)
+            }
             hasResult = true
         } catch {
             errorMessage = error.localizedDescription
@@ -195,20 +204,67 @@ struct AISplitSheet: View {
         hasResult = false
         generatedName = ""
         resolvedRoutines = []
-        unresolvedNames = []
     }
 
     private func save() {
         let trimmed = generatedName.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
+
+        // Track newly created templates so the same new exercise across routines
+        // reuses the same template rather than creating duplicates.
+        var createdTemplates: [String: ExerciseTemplate] = [:]
+
         let split = TrainingSplit(name: trimmed)
         modelContext.insert(split)
-        for (index, routine) in resolvedRoutines.enumerated() {
-            let entry = SplitRoutine(order: index)
-            split.routines.append(entry)
-            entry.routine = routine
+
+        for (routineIdx, resolvedRoutine) in resolvedRoutines.enumerated() {
+            let routine = Routine(name: resolvedRoutine.name)
+            modelContext.insert(routine)
+
+            for (exIdx, resolved) in resolvedRoutine.exercises.enumerated() {
+                let template: ExerciseTemplate
+                if let existing = resolved.template {
+                    template = existing
+                } else if let alreadyCreated = createdTemplates[resolved.name.lowercased()] {
+                    template = alreadyCreated
+                } else {
+                    let newTemplate = ExerciseTemplate(
+                        name: resolved.name,
+                        category: resolved.category,
+                        muscleGroup: resolved.muscleGroup,
+                        isCustom: true
+                    )
+                    modelContext.insert(newTemplate)
+                    createdTemplates[resolved.name.lowercased()] = newTemplate
+                    template = newTemplate
+                }
+
+                let entry = RoutineExercise(order: exIdx)
+                routine.exercises.append(entry)
+                entry.exerciseTemplate = template
+
+                for (setIdx, setData) in resolved.sets.enumerated() {
+                    let routineSet = RoutineSet(
+                        setNumber: setIdx + 1,
+                        reps: setData.reps,
+                        weight: setData.weight
+                    )
+                    entry.defaultSets.append(routineSet)
+                }
+            }
+
+            let splitEntry = SplitRoutine(order: routineIdx)
+            split.routines.append(splitEntry)
+            splitEntry.routine = routine
         }
+
         try? modelContext.save()
         dismiss()
+    }
+
+    private func formatWeight(_ value: Double) -> String {
+        value.truncatingRemainder(dividingBy: 1) == 0
+            ? String(format: "%.0f", value)
+            : String(format: "%.1f", value)
     }
 }

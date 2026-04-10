@@ -65,7 +65,6 @@ struct WorkoutTab: View {
                     } label: {
                         Label("Generate with AI", systemImage: "sparkles")
                     }
-                    .disabled(routines.isEmpty)
                 }
 
                 Section("Routines") {

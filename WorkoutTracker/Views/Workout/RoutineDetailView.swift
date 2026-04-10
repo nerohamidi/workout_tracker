@@ -21,18 +21,24 @@ struct RoutineDetailView: View {
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(routine.sortedExercises) { entry in
-                        HStack {
-                            VStack(alignment: .leading) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
                                 Text(entry.exerciseTemplate?.name ?? "Exercise")
-                                if let category = entry.exerciseTemplate?.category {
-                                    Text(category.rawValue)
+                                Spacer()
+                                if let group = entry.exerciseTemplate?.muscleGroup {
+                                    Text(group.rawValue)
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                 }
                             }
-                            Spacer()
-                            if let group = entry.exerciseTemplate?.muscleGroup {
-                                Text(group.rawValue)
+                            if !entry.sortedDefaultSets.isEmpty {
+                                Text(entry.sortedDefaultSets
+                                    .map { "\($0.reps)×\(formatWeight($0.weight))kg" }
+                                    .joined(separator: "  ·  "))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            } else if let category = entry.exerciseTemplate?.category {
+                                Text(category.rawValue)
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -86,6 +92,12 @@ struct RoutineDetailView: View {
         }
     }
 
+    private func formatWeight(_ value: Double) -> String {
+        value.truncatingRemainder(dividingBy: 1) == 0
+            ? String(format: "%.0f", value)
+            : String(format: "%.1f", value)
+    }
+
     /// Creates a new in-progress workout populated with the routine's exercises.
     /// Each routine entry becomes a `WorkoutExercise` with one starter set (or
     /// cardio entry, depending on category) — same shape as `AddExerciseSheet`.
@@ -100,7 +112,16 @@ struct RoutineDetailView: View {
             workoutExercise.exerciseTemplate = template
 
             if template.category == .strength {
-                workoutExercise.sets.append(ExerciseSet(setNumber: 1))
+                let defaults = entry.sortedDefaultSets
+                if defaults.isEmpty {
+                    workoutExercise.sets.append(ExerciseSet(setNumber: 1))
+                } else {
+                    for ds in defaults {
+                        workoutExercise.sets.append(
+                            ExerciseSet(setNumber: ds.setNumber, reps: ds.reps, weight: ds.weight)
+                        )
+                    }
+                }
             } else {
                 workoutExercise.cardioEntries.append(CardioEntry())
             }

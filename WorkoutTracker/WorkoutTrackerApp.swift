@@ -19,6 +19,7 @@ struct WorkoutTrackerApp: App {
             CardioEntry.self,
             Routine.self,
             RoutineExercise.self,
+            RoutineSet.self,
             TrainingSplit.self,
             SplitRoutine.self,
         ])

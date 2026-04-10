@@ -11,47 +11,100 @@ struct WorkoutDetailView: View {
     @State private var saveConfirmation: String?
 
     var body: some View {
-        List {
-            Section("Summary") {
-                LabeledContent("Date", value: workout.date, format: .dateTime.month().day().year())
-                LabeledContent("Duration", value: workout.formattedDuration)
-                LabeledContent("Exercises", value: "\(workout.exercises.count)")
-                if !workout.notes.isEmpty {
-                    LabeledContent("Notes", value: workout.notes)
-                }
-            }
-
-            ForEach(workout.sortedExercises) { exercise in
-                Section(exercise.exerciseTemplate?.name ?? "Exercise") {
-                    if exercise.isCardio {
-                        if let entry = exercise.cardioEntries.first {
-                            if entry.durationMinutes > 0 {
-                                LabeledContent("Duration", value: "\(formatted(entry.durationMinutes)) min")
-                            }
-                            if entry.distance > 0 {
-                                LabeledContent("Distance", value: "\(formatted(entry.distance)) \(useMetric ? "km" : "mi")")
-                            }
+        ScrollView {
+            VStack(spacing: 16) {
+                // MARK: - Summary card
+                VStack(spacing: 12) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(workout.date, style: .date)
+                                .font(.headline.weight(.bold))
+                            Text(workout.date, style: .time)
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
                         }
-                    } else {
-                        ForEach(exercise.sortedSets) { set in
-                            HStack {
-                                Text("Set \(set.setNumber)")
-                                    .foregroundStyle(.secondary)
-                                Spacer()
-                                if set.weight > 0 {
-                                    Text("\(formatted(set.weight)) \(useMetric ? "kg" : "lbs")")
-                                }
-                                if set.reps > 0 {
-                                    Text("× \(set.reps) reps")
-                                }
-                            }
-                            .font(.subheadline)
-                        }
+                        Spacer()
                     }
+
+                    HStack(spacing: 20) {
+                        statPill(icon: "clock", value: workout.formattedDuration)
+                        statPill(icon: "figure.strengthtraining.traditional", value: "\(workout.exercises.count) exercises")
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(16)
+                .background(Color(.secondarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .padding(.horizontal)
+
+                // MARK: - Exercise cards
+                ForEach(workout.sortedExercises) { exercise in
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(exercise.exerciseTemplate?.name ?? "Exercise")
+                            .font(.subheadline.weight(.bold))
+                            .padding(.horizontal, 16)
+                            .padding(.top, 14)
+
+                        if exercise.isCardio {
+                            if let entry = exercise.cardioEntries.first {
+                                HStack(spacing: 16) {
+                                    if entry.durationMinutes > 0 {
+                                        HStack(spacing: 4) {
+                                            Image(systemName: "clock")
+                                                .font(.caption2)
+                                            Text("\(formatted(entry.durationMinutes)) min")
+                                                .font(.subheadline)
+                                        }
+                                        .foregroundStyle(.secondary)
+                                    }
+                                    if entry.distance > 0 {
+                                        HStack(spacing: 4) {
+                                            Image(systemName: "point.topleft.down.to.point.bottomright.curvepath")
+                                                .font(.caption2)
+                                            Text("\(formatted(entry.distance)) \(useMetric ? "km" : "mi")")
+                                                .font(.subheadline)
+                                        }
+                                        .foregroundStyle(.secondary)
+                                    }
+                                }
+                                .padding(.horizontal, 16)
+                            }
+                        } else {
+                            VStack(spacing: 0) {
+                                ForEach(exercise.sortedSets) { set in
+                                    HStack {
+                                        Text("Set \(set.setNumber)")
+                                            .font(.subheadline)
+                                            .foregroundStyle(.tertiary)
+                                            .frame(width: 44, alignment: .leading)
+                                        Spacer()
+                                        if set.weight > 0 {
+                                            Text("\(formatted(set.weight)) \(useMetric ? "kg" : "lbs")")
+                                                .font(.subheadline.weight(.medium))
+                                        }
+                                        if set.reps > 0 {
+                                            Text("x \(set.reps)")
+                                                .font(.subheadline)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                    }
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 6)
+                                }
+                            }
+                        }
+
+                        Spacer().frame(height: 2)
+                    }
+                    .background(Color(.secondarySystemGroupedBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .padding(.horizontal)
                 }
             }
+            .padding(.vertical)
         }
-        .navigationTitle("Workout Details")
+        .background(Color(.systemGroupedBackground))
+        .navigationTitle("Details")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -59,7 +112,8 @@ struct WorkoutDetailView: View {
                     routineName = defaultRoutineName()
                     showSaveAsRoutine = true
                 } label: {
-                    Label("Save as Routine", systemImage: "square.and.arrow.down")
+                    Image(systemName: "square.and.arrow.down")
+                        .font(.subheadline)
                 }
                 .disabled(workout.exercises.isEmpty)
             }
@@ -69,7 +123,7 @@ struct WorkoutDetailView: View {
             Button("Cancel", role: .cancel) {}
             Button("Save") { saveAsRoutine() }
         } message: {
-            Text("Creates a reusable routine with the same exercises as this workout.")
+            Text("Creates a reusable routine with the same exercises.")
         }
         .alert("Routine Saved",
                isPresented: Binding(get: { saveConfirmation != nil },
@@ -78,6 +132,20 @@ struct WorkoutDetailView: View {
         } message: {
             Text(saveConfirmation ?? "")
         }
+    }
+
+    private func statPill(icon: String, value: String) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: icon)
+                .font(.caption2)
+            Text(value)
+                .font(.caption.weight(.medium))
+        }
+        .foregroundStyle(.secondary)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Color(.systemGray5))
+        .clipShape(Capsule())
     }
 
     private func defaultRoutineName() -> String {

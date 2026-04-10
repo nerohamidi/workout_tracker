@@ -1,8 +1,6 @@
 import SwiftUI
 import SwiftData
 
-/// Shows a routine's exercises and provides actions to start a workout from it,
-/// edit the routine, or delete it.
 struct RoutineDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -14,64 +12,131 @@ struct RoutineDetailView: View {
     @State private var startedWorkout: Workout?
 
     var body: some View {
-        List {
-            Section("Exercises") {
-                if routine.sortedExercises.isEmpty {
-                    Text("No exercises in this routine")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(routine.sortedExercises) { entry in
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack {
-                                Text(entry.exerciseTemplate?.name ?? "Exercise")
-                                Spacer()
-                                if let group = entry.exerciseTemplate?.muscleGroup {
-                                    Text(group.rawValue)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                            if !entry.sortedDefaultSets.isEmpty {
-                                Text(entry.sortedDefaultSets
-                                    .map { "\($0.reps)×\(formatWeight($0.weight))kg" }
-                                    .joined(separator: "  ·  "))
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            } else if let category = entry.exerciseTemplate?.category {
-                                Text(category.rawValue)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                }
-            }
-
-            Section {
+        ScrollView {
+            VStack(spacing: 16) {
+                // MARK: - Start button
                 Button {
                     startWorkoutFromRoutine()
                 } label: {
-                    Label("Start Workout", systemImage: "play.fill")
-                        .frame(maxWidth: .infinity)
+                    HStack(spacing: 10) {
+                        Image(systemName: "play.fill")
+                            .font(.subheadline)
+                        Text("Start Workout")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(Color.accentColor)
+                    .foregroundStyle(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
                 .disabled(routine.exercises.isEmpty)
-            }
+                .padding(.horizontal)
 
-            Section {
-                Button(role: .destructive) {
-                    showDeleteConfirm = true
-                } label: {
-                    Label("Delete Routine", systemImage: "trash")
+                // MARK: - Exercises
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Exercises")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+                        .padding(.horizontal)
+
+                    if routine.sortedExercises.isEmpty {
+                        Text("No exercises in this routine")
+                            .font(.subheadline)
+                            .foregroundStyle(.tertiary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(16)
+                            .background(Color(.secondarySystemGroupedBackground))
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .padding(.horizontal)
+                    } else {
+                        VStack(spacing: 1) {
+                            ForEach(Array(routine.sortedExercises.enumerated()), id: \.element.persistentModelID) { index, entry in
+                                HStack(spacing: 12) {
+                                    Text("\(index + 1)")
+                                        .font(.caption.weight(.bold))
+                                        .foregroundStyle(.tertiary)
+                                        .frame(width: 24)
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text(entry.exerciseTemplate?.name ?? "Exercise")
+                                            .font(.subheadline.weight(.medium))
+                                        if !entry.sortedDefaultSets.isEmpty {
+                                            Text(entry.sortedDefaultSets
+                                                .map { "\($0.reps)x\(formatWeight($0.weight))kg" }
+                                                .joined(separator: " / "))
+                                                .font(.caption2)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                    }
+                                    Spacer()
+                                    if let group = entry.exerciseTemplate?.muscleGroup {
+                                        Text(group.rawValue)
+                                            .font(.caption2.weight(.medium))
+                                            .foregroundStyle(.secondary)
+                                            .padding(.horizontal, 8)
+                                            .padding(.vertical, 3)
+                                            .background(Color(.systemGray5))
+                                            .clipShape(Capsule())
+                                    }
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 12)
+                                .background(Color(.secondarySystemGroupedBackground))
+                            }
+                        }
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .padding(.horizontal)
+                    }
                 }
+
+                // MARK: - Actions
+                VStack(spacing: 1) {
+                    Button {
+                        showEditForm = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "pencil")
+                                .font(.subheadline)
+                            Text("Edit Routine")
+                                .font(.subheadline.weight(.medium))
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(.tertiary)
+                        }
+                        .foregroundStyle(.primary)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
+                        .background(Color(.secondarySystemGroupedBackground))
+                    }
+                    .buttonStyle(.plain)
+
+                    Button(role: .destructive) {
+                        showDeleteConfirm = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "trash")
+                                .font(.subheadline)
+                            Text("Delete Routine")
+                                .font(.subheadline.weight(.medium))
+                            Spacer()
+                        }
+                        .foregroundStyle(.red)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
+                        .background(Color(.secondarySystemGroupedBackground))
+                    }
+                    .buttonStyle(.plain)
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .padding(.horizontal)
             }
+            .padding(.vertical)
         }
+        .background(Color(.systemGroupedBackground))
         .navigationTitle(routine.name)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button("Edit") { showEditForm = true }
-            }
-        }
         .sheet(isPresented: $showEditForm) {
             RoutineFormView(routine: routine)
         }
@@ -88,7 +153,7 @@ struct RoutineDetailView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This routine will be removed. Past workouts started from it are not affected.")
+            Text("This routine will be removed. Past workouts are not affected.")
         }
     }
 
@@ -98,9 +163,6 @@ struct RoutineDetailView: View {
             : String(format: "%.1f", value)
     }
 
-    /// Creates a new in-progress workout populated with the routine's exercises.
-    /// Each routine entry becomes a `WorkoutExercise` with one starter set (or
-    /// cardio entry, depending on category) — same shape as `AddExerciseSheet`.
     private func startWorkoutFromRoutine() {
         let workout = Workout()
         modelContext.insert(workout)

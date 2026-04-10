@@ -29,65 +29,86 @@ struct ExercisesTab: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                Picker("Category", selection: $selectedCategory) {
-                    Text("All").tag(nil as ExerciseCategory?)
-                    ForEach(ExerciseCategory.allCases, id: \.self) { category in
-                        Text(category.rawValue).tag(category as ExerciseCategory?)
+            ScrollView {
+                VStack(spacing: 6) {
+                    // Category filter
+                    HStack(spacing: 8) {
+                        filterChip("All", isSelected: selectedCategory == nil) {
+                            selectedCategory = nil
+                        }
+                        ForEach(ExerciseCategory.allCases, id: \.self) { category in
+                            filterChip(category.rawValue, isSelected: selectedCategory == category) {
+                                selectedCategory = category
+                            }
+                        }
+                        Spacer()
                     }
-                }
-                .pickerStyle(.segmented)
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets())
-                .padding(.horizontal)
+                    .padding(.horizontal)
+                    .padding(.vertical, 8)
 
-                ForEach(groupedExercises, id: \.0) { group, exercises in
-                    Section(group.rawValue) {
-                        ForEach(exercises) { exercise in
-                            NavigationLink(value: exercise) {
-                                HStack {
-                                    VStack(alignment: .leading) {
-                                        Text(exercise.name)
-                                        Text(exercise.category.rawValue)
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
+                    ForEach(groupedExercises, id: \.0) { group, exercises in
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(group.rawValue)
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(.secondary)
+                                .textCase(.uppercase)
+                                .padding(.horizontal)
+                                .padding(.top, 12)
+
+                            VStack(spacing: 1) {
+                                ForEach(exercises) { exercise in
+                                    NavigationLink(value: exercise) {
+                                        HStack(spacing: 12) {
+                                            Text(exercise.name)
+                                                .font(.subheadline.weight(.medium))
+                                                .foregroundStyle(.primary)
+                                            Spacer()
+                                            if exercise.isCustom {
+                                                Text("Custom")
+                                                    .font(.caption2.weight(.medium))
+                                                    .foregroundStyle(.secondary)
+                                                    .padding(.horizontal, 8)
+                                                    .padding(.vertical, 3)
+                                                    .background(Color(.systemGray5))
+                                                    .clipShape(Capsule())
+                                            }
+                                            Image(systemName: "chevron.right")
+                                                .font(.caption2.weight(.semibold))
+                                                .foregroundStyle(.tertiary)
+                                        }
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 12)
+                                        .background(Color(.secondarySystemGroupedBackground))
                                     }
-                                    Spacer()
-                                    if exercise.isCustom {
-                                        Text("Custom")
-                                            .font(.caption2)
-                                            .padding(.horizontal, 8)
-                                            .padding(.vertical, 2)
-                                            .background(.fill)
-                                            .clipShape(Capsule())
+                                    .buttonStyle(.plain)
+                                    .contextMenu {
+                                        if exercise.isCustom {
+                                            Button(role: .destructive) {
+                                                exerciseToDelete = exercise
+                                            } label: {
+                                                Label("Delete", systemImage: "trash")
+                                            }
+                                        }
                                     }
                                 }
                             }
-                            // Only custom exercises can be deleted — built-in library
-                            // entries are not removable so the catalog stays consistent.
-                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                if exercise.isCustom {
-                                    Button(role: .destructive) {
-                                        exerciseToDelete = exercise
-                                    } label: {
-                                        Label("Delete", systemImage: "trash")
-                                    }
-                                }
-                            }
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .padding(.horizontal)
                         }
                     }
                 }
+                .padding(.bottom)
             }
+            .background(Color(.systemGroupedBackground))
             .searchable(text: $searchText, prompt: "Search exercises")
             .navigationDestination(for: ExerciseTemplate.self) { template in
                 ExerciseDetailView(template: template)
             }
             .navigationTitle("Exercises")
             .toolbar {
-                Button {
-                    showAddForm = true
-                } label: {
+                Button { showAddForm = true } label: {
                     Image(systemName: "plus")
+                        .font(.subheadline.weight(.semibold))
                 }
             }
             .sheet(isPresented: $showAddForm) {
@@ -107,8 +128,21 @@ struct ExercisesTab: View {
                     exerciseToDelete = nil
                 }
             } message: {
-                Text("Past workouts that used this exercise will keep their entries but lose the exercise name.")
+                Text("Past workouts will keep their entries but lose the exercise name.")
             }
         }
+    }
+
+    private func filterChip(_ title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .padding(.horizontal, 14)
+                .padding(.vertical, 7)
+                .background(isSelected ? Color.accentColor : Color(.systemGray5))
+                .foregroundStyle(isSelected ? .white : .primary)
+                .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
     }
 }

@@ -13,49 +13,104 @@ struct ActiveWorkoutView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                Section {
+            ScrollView {
+                VStack(spacing: 16) {
+                    // MARK: - Timer card
                     HStack {
-                        Label(formattedElapsed, systemImage: "clock")
-                            .font(.headline)
-                            .monospacedDigit()
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Elapsed")
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(.secondary)
+                                .textCase(.uppercase)
+                            Text(formattedElapsed)
+                                .font(.system(.title, design: .monospaced, weight: .bold))
+                                .foregroundStyle(.primary)
+                        }
                         Spacer()
-                        Text("\(workout.exercises.count) exercise\(workout.exercises.count == 1 ? "" : "s")")
-                            .foregroundStyle(.secondary)
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text("\(workout.exercises.count)")
+                                .font(.title.weight(.bold))
+                                .foregroundStyle(Color.accentColor)
+                            Text("exercise\(workout.exercises.count == 1 ? "" : "s")")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
-                }
+                    .padding(16)
+                    .background(Color(.secondarySystemGroupedBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .padding(.horizontal)
 
-                ForEach(workout.sortedExercises) { exercise in
-                    ExerciseSection(workoutExercise: exercise)
-                }
-                .onDelete(perform: deleteExercises)
+                    // MARK: - Exercise sections
+                    ForEach(workout.sortedExercises) { exercise in
+                        ExerciseCard(workoutExercise: exercise, onDelete: {
+                            modelContext.delete(exercise)
+                        })
+                    }
 
-                Section {
+                    // MARK: - Add exercise
                     Button {
                         showAddExercise = true
                     } label: {
-                        Label("Add Exercise", systemImage: "plus.circle.fill")
+                        HStack(spacing: 8) {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.title3)
+                            Text("Add Exercise")
+                                .font(.subheadline.weight(.semibold))
+                        }
+                        .foregroundStyle(Color.accentColor)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(Color.accentColor.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }
+                    .padding(.horizontal)
+
+                    // MARK: - Bottom actions
+                    HStack(spacing: 12) {
+                        Button {
+                            showDiscardAlert = true
+                        } label: {
+                            Text("Discard")
+                                .font(.subheadline.weight(.semibold))
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 50)
+                                .background(Color(.systemGray5))
+                                .foregroundStyle(.red)
+                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        }
+
+                        Button {
+                            showFinishAlert = true
+                        } label: {
+                            Text("Finish Workout")
+                                .font(.subheadline.weight(.semibold))
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 50)
+                                .background(Color.accentColor)
+                                .foregroundStyle(.white)
+                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        }
+                        .disabled(workout.exercises.isEmpty)
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, 8)
                 }
+                .padding(.vertical)
             }
+            .background(Color(.systemGroupedBackground))
             .navigationTitle("Active Workout")
             .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(for: ExerciseTemplate.self) { template in
                 ExerciseDetailView(template: template)
             }
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Discard") {
-                        showDiscardAlert = true
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button { showDiscardAlert = true } label: {
+                        Image(systemName: "xmark")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.secondary)
                     }
-                    .foregroundStyle(.red)
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Finish") {
-                        showFinishAlert = true
-                    }
-                    .fontWeight(.semibold)
-                    .disabled(workout.exercises.isEmpty)
                 }
             }
             .sheet(isPresented: $showAddExercise) {
@@ -102,8 +157,6 @@ struct ActiveWorkoutView: View {
     private func finishWorkout() {
         workout.durationSeconds = elapsedSeconds
         workout.isCompleted = true
-        // If this workout was started from a split, advance the rotation so the next
-        // visit to the split detail view shows the following routine as "Next".
         workout.sourceSplit?.advance()
         try? modelContext.save()
         dismiss()
@@ -114,76 +167,121 @@ struct ActiveWorkoutView: View {
         try? modelContext.save()
         dismiss()
     }
-
-    private func deleteExercises(at offsets: IndexSet) {
-        let sorted = workout.sortedExercises
-        for index in offsets {
-            modelContext.delete(sorted[index])
-        }
-    }
 }
 
-struct ExerciseSection: View {
+// MARK: - Exercise Card
+
+struct ExerciseCard: View {
     @Environment(\.modelContext) private var modelContext
     @Bindable var workoutExercise: WorkoutExercise
+    var onDelete: () -> Void
     @State private var isSuggesting = false
     @State private var suggestError: String?
 
     var body: some View {
-        Section {
-            if workoutExercise.isCardio {
-                CardioLogView(workoutExercise: workoutExercise)
-            } else {
-                // Show past PRs as a target. `PersonalRecord.records(for:)` excludes
-                // in-progress workouts, so the current session never appears here —
-                // these are strictly historical maxes the user is trying to beat.
-                if let template = workoutExercise.exerciseTemplate {
-                    PersonalRecordsBanner(template: template)
-                }
-
-                ForEach(workoutExercise.sortedSets) { set in
-                    SetRowView(exerciseSet: set)
-                }
-                .onDelete(perform: deleteSets)
-
-                Button {
-                    addSet()
-                } label: {
-                    Label("Add Set", systemImage: "plus")
-                        .font(.subheadline)
-                }
-
-                if workoutExercise.exerciseTemplate != nil {
-                    Button {
-                        Task { await suggestSets() }
-                    } label: {
-                        HStack {
-                            if isSuggesting {
-                                ProgressView()
-                                    .padding(.trailing, 4)
-                            }
-                            Label("Suggest Sets with AI", systemImage: "sparkles")
-                                .font(.subheadline)
-                        }
-                    }
-                    .disabled(isSuggesting)
-                }
-            }
-        } header: {
+        VStack(alignment: .leading, spacing: 0) {
+            // Header
             HStack {
                 Text(workoutExercise.exerciseTemplate?.name ?? "Exercise")
+                    .font(.subheadline.weight(.bold))
                 Spacer()
                 if let template = workoutExercise.exerciseTemplate {
                     NavigationLink(value: template) {
                         Image(systemName: "chart.xyaxis.line")
-                            .font(.caption)
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(.secondary)
+                            .padding(6)
+                            .background(Color(.systemGray5))
+                            .clipShape(Circle())
                     }
                     .buttonStyle(.plain)
-                    .foregroundStyle(Color.accentColor)
-                    .accessibilityLabel("View history and progression")
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 14)
+            .padding(.bottom, 10)
+
+            if workoutExercise.isCardio {
+                CardioLogView(workoutExercise: workoutExercise)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 14)
+            } else {
+                // PR banner
+                if let template = workoutExercise.exerciseTemplate {
+                    PersonalRecordsBanner(template: template)
+                }
+
+                // Sets
+                VStack(spacing: 0) {
+                    // Column headers
+                    HStack {
+                        Text("SET")
+                            .frame(width: 36, alignment: .leading)
+                        Spacer()
+                        Text("WEIGHT")
+                            .frame(width: 80)
+                        Spacer()
+                        Text("REPS")
+                            .frame(width: 60)
+                    }
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 6)
+
+                    ForEach(workoutExercise.sortedSets) { set in
+                        SetRowView(exerciseSet: set)
+                    }
+                }
+                .padding(.bottom, 8)
+
+                // Action buttons
+                Divider()
+                    .padding(.horizontal, 16)
+
+                HStack(spacing: 0) {
+                    Button { addSet() } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "plus")
+                                .font(.caption.weight(.bold))
+                            Text("Add Set")
+                                .font(.caption.weight(.medium))
+                        }
+                        .foregroundStyle(Color.accentColor)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                    }
+
+                    if workoutExercise.exerciseTemplate != nil {
+                        Divider()
+                            .frame(height: 20)
+
+                        Button {
+                            Task { await suggestSets() }
+                        } label: {
+                            HStack(spacing: 4) {
+                                if isSuggesting {
+                                    ProgressView()
+                                        .scaleEffect(0.7)
+                                } else {
+                                    Image(systemName: "sparkles")
+                                        .font(.caption.weight(.bold))
+                                }
+                                Text("AI Suggest")
+                                    .font(.caption.weight(.medium))
+                            }
+                            .foregroundStyle(.purple)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                        }
+                        .disabled(isSuggesting)
+                    }
                 }
             }
         }
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .padding(.horizontal)
         .alert("Couldn't Suggest Sets", isPresented: Binding(
             get: { suggestError != nil },
             set: { if !$0 { suggestError = nil } }
@@ -200,9 +298,6 @@ struct ExerciseSection: View {
         modelContext.insert(set)
     }
 
-    /// Ask Gemini for a set scheme based on the user's PR history for this exercise
-    /// and append the suggestions as new ExerciseSet rows. Existing sets are kept —
-    /// the suggestions are added on top so the user can compare or remove them.
     private func suggestSets() async {
         guard let template = workoutExercise.exerciseTemplate else { return }
         isSuggesting = true
@@ -221,14 +316,9 @@ struct ExerciseSection: View {
             suggestError = error.localizedDescription
         }
     }
-
-    private func deleteSets(at offsets: IndexSet) {
-        let sorted = workoutExercise.sortedSets
-        for index in offsets {
-            modelContext.delete(sorted[index])
-        }
-    }
 }
+
+// MARK: - Set Row
 
 struct SetRowView: View {
     @Bindable var exerciseSet: ExerciseSet
@@ -236,39 +326,49 @@ struct SetRowView: View {
 
     var body: some View {
         HStack {
-            Text("Set \(exerciseSet.setNumber)")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .frame(width: 50, alignment: .leading)
+            Text("\(exerciseSet.setNumber)")
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(.tertiary)
+                .frame(width: 36, alignment: .leading)
+
+            Spacer()
 
             HStack(spacing: 4) {
                 TextField("0", value: $exerciseSet.weight, format: .number)
                     .keyboardType(.decimalPad)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 70)
-                Text(useMetric ? "kg" : "lbs")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.subheadline.weight(.medium))
+                    .multilineTextAlignment(.center)
+                    .frame(width: 56)
+                    .padding(.vertical, 6)
+                    .background(Color(.systemGray5))
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                Text(useMetric ? "kg" : "lb")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
             }
+            .frame(width: 80)
 
             Spacer()
 
             HStack(spacing: 4) {
                 TextField("0", value: $exerciseSet.reps, format: .number)
                     .keyboardType(.numberPad)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 50)
-                Text("reps")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.subheadline.weight(.medium))
+                    .multilineTextAlignment(.center)
+                    .frame(width: 44)
+                    .padding(.vertical, 6)
+                    .background(Color(.systemGray5))
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             }
+            .frame(width: 60)
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 3)
     }
 }
 
-/// Compact read-only banner that lists the user's existing PRs for an exercise as a
-/// reference target during an active workout. Renders nothing if there are no PRs yet
-/// (so the first-ever workout for an exercise stays uncluttered).
+// MARK: - PR Banner
+
 private struct PersonalRecordsBanner: View {
     let template: ExerciseTemplate
     @AppStorage("useMetric") private var useMetric = true
@@ -279,24 +379,19 @@ private struct PersonalRecordsBanner: View {
 
     var body: some View {
         if !records.isEmpty {
-            HStack(alignment: .top, spacing: 6) {
+            HStack(spacing: 8) {
                 Image(systemName: "trophy.fill")
                     .font(.caption2)
                     .foregroundStyle(.orange)
-                    .padding(.top, 2)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Personal Records")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .textCase(.uppercase)
-                    Text(records.map { "\($0.reps)×\(formatted($0.weight))\(useMetric ? "kg" : "lb")" }
-                        .joined(separator: "  ·  "))
-                        .font(.caption)
-                        .foregroundStyle(.primary)
-                }
-                Spacer(minLength: 0)
+                Text(records.map { "\($0.reps)x\(formatted($0.weight))\(useMetric ? "kg" : "lb")" }
+                    .joined(separator: " / "))
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(.secondary)
+                Spacer()
             }
-            .listRowBackground(Color.orange.opacity(0.08))
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(Color.orange.opacity(0.06))
         }
     }
 
@@ -306,6 +401,8 @@ private struct PersonalRecordsBanner: View {
             : String(format: "%.1f", value)
     }
 }
+
+// MARK: - Cardio
 
 struct CardioLogView: View {
     @Environment(\.modelContext) private var modelContext
@@ -324,6 +421,8 @@ struct CardioLogView: View {
                 let entry = CardioEntry(workoutExercise: workoutExercise)
                 modelContext.insert(entry)
             }
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(Color.accentColor)
         }
     }
 }
@@ -333,33 +432,43 @@ struct CardioEntryRow: View {
     let useMetric: Bool
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 10) {
             HStack {
                 Text("Duration")
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
                 Spacer()
                 HStack(spacing: 4) {
                     TextField("0", value: $entry.durationMinutes, format: .number)
                         .keyboardType(.decimalPad)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(width: 70)
+                        .font(.subheadline.weight(.medium))
+                        .multilineTextAlignment(.center)
+                        .frame(width: 56)
+                        .padding(.vertical, 6)
+                        .background(Color(.systemGray5))
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     Text("min")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
                 }
             }
             HStack {
                 Text("Distance")
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
                 Spacer()
                 HStack(spacing: 4) {
                     TextField("0", value: $entry.distance, format: .number)
                         .keyboardType(.decimalPad)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(width: 70)
+                        .font(.subheadline.weight(.medium))
+                        .multilineTextAlignment(.center)
+                        .frame(width: 56)
+                        .padding(.vertical, 6)
+                        .background(Color(.systemGray5))
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     Text(useMetric ? "km" : "mi")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
                 }
             }
         }

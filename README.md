@@ -26,6 +26,20 @@ A simple, no-frills iOS app for logging workouts. Supports both strength trainin
 2. Select an iPhone simulator
 3. Build and run (Cmd+R)
 
+### StoreKit (In-App Purchases) Setup
+
+The app uses StoreKit 2 for Plus and Pro subscriptions. To test purchases locally in the simulator:
+
+1. Open the project in Xcode
+2. **File > New > File > StoreKit Configuration File** — name it anything (e.g. `storekit_config`)
+3. In the StoreKit config editor, click **+** and select **Add Auto-Renewable Subscription**
+4. Create a subscription group (e.g. "Plans") and add two subscriptions:
+   - **Plus**: Product ID `com.workouttracker.plus`, Price `$3.00`, Duration 1 Month
+   - **Pro**: Product ID `com.workouttracker.pro`, Price `$5.00`, Duration 1 Month
+5. **Product > Scheme > Edit Scheme** (Cmd+<) > **Run** > **Options** tab
+6. Set **StoreKit Configuration** to the file you just created
+7. Build and run — purchases will now work in the simulator without a real App Store Connect setup
+
 ## Architecture
 
 The app is a thin SwiftUI layer over a SwiftData model graph. There is no view-model layer — views read directly from `@Query` and write through `@Bindable` model instances.

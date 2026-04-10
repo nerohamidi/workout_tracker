@@ -7,12 +7,14 @@ import SwiftData
 struct AISplitSheet: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var subscriptionManager: SubscriptionManager
 
     @Query(sort: \ExerciseTemplate.name) private var allExercises: [ExerciseTemplate]
 
     @State private var userPrompt: String = ""
     @State private var isLoading = false
     @State private var errorMessage: String?
+    @State private var showPaywall = false
 
     @State private var generatedName: String = ""
     @State private var resolvedRoutines: [ResolvedRoutine] = []
@@ -64,6 +66,9 @@ struct AISplitSheet: View {
             } message: { msg in
                 Text(msg)
             }
+            .sheet(isPresented: $showPaywall) {
+                PaywallView()
+            }
         }
     }
 
@@ -86,21 +91,40 @@ struct AISplitSheet: View {
             .lineLimit(3...6)
         }
 
-        Section {
-            Button {
-                Task { await generate() }
-            } label: {
+        if !subscriptionManager.canGenerateAISplit {
+            Section {
                 HStack {
-                    if isLoading {
-                        ProgressView()
-                            .padding(.trailing, 4)
-                    }
-                    Label("Generate", systemImage: "sparkles")
-                        .frame(maxWidth: .infinity)
-                        .fontWeight(.semibold)
+                    Image(systemName: "lock.fill")
+                        .foregroundStyle(.secondary)
+                    Text("AI split limit reached.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Upgrade") { showPaywall = true }
+                        .font(.subheadline.weight(.semibold))
                 }
             }
-            .disabled(isLoading || userPrompt.trimmingCharacters(in: .whitespaces).isEmpty)
+        } else {
+            Section {
+                Button {
+                    Task { await generate() }
+                } label: {
+                    HStack {
+                        if isLoading {
+                            ProgressView()
+                                .padding(.trailing, 4)
+                        }
+                        Label("Generate", systemImage: "sparkles")
+                            .frame(maxWidth: .infinity)
+                            .fontWeight(.semibold)
+                    }
+                }
+                .disabled(isLoading || userPrompt.trimmingCharacters(in: .whitespaces).isEmpty)
+
+                Text(subscriptionManager.remainingAISplits)
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
         }
     }
 
@@ -259,6 +283,7 @@ struct AISplitSheet: View {
         }
 
         try? modelContext.save()
+        subscriptionManager.recordAISplitGenerated()
         dismiss()
     }
 

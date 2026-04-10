@@ -26,7 +26,9 @@ enum GeminiModel: String, CaseIterable {
 }
 
 enum GeminiClient {
-    /// Resolve the model from user preference or default.
+    /// Resolve the model. The caller should use `SubscriptionManager.effectiveModel`
+    /// where possible, but this fallback reads directly from UserDefaults for contexts
+    /// where the manager isn't available (e.g. static service calls).
     static var model: String {
         let stored = UserDefaults.standard.string(forKey: "geminiModel") ?? ""
         if let chosen = GeminiModel(rawValue: stored) {

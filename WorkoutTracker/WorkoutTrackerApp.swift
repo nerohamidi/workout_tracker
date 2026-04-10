@@ -9,6 +9,7 @@ import SwiftData
 @main
 struct WorkoutTrackerApp: App {
     let sharedModelContainer: ModelContainer
+    @StateObject private var subscriptionManager = SubscriptionManager()
 
     init() {
         let schema = Schema([
@@ -49,6 +50,7 @@ struct WorkoutTrackerApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(subscriptionManager)
         }
         .modelContainer(sharedModelContainer)
     }

@@ -43,6 +43,9 @@
 		A10000010000000000000104 /* AISetSuggester.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000104 /* AISetSuggester.swift */; };
 		A10000010000000000000105 /* AIRoutineSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000105 /* AIRoutineSheet.swift */; };
 		A10000010000000000000106 /* AISplitSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000106 /* AISplitSheet.swift */; };
+		A10000010000000000000110 /* SubscriptionPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000110 /* SubscriptionPlan.swift */; };
+		A10000010000000000000111 /* SubscriptionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000111 /* SubscriptionManager.swift */; };
+		A10000010000000000000112 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000112 /* PaywallView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -84,6 +87,9 @@
 		A20000010000000000000104 /* AISetSuggester.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISetSuggester.swift; sourceTree = "<group>"; };
 		A20000010000000000000105 /* AIRoutineSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIRoutineSheet.swift; sourceTree = "<group>"; };
 		A20000010000000000000106 /* AISplitSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISplitSheet.swift; sourceTree = "<group>"; };
+		A20000010000000000000110 /* SubscriptionPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPlan.swift; sourceTree = "<group>"; };
+		A20000010000000000000111 /* SubscriptionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionManager.swift; sourceTree = "<group>"; };
+		A20000010000000000000112 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -149,6 +155,7 @@
 				A20000010000000000000081 /* SplitRoutine.swift */,
 				A20000010000000000000090 /* PersonalRecord.swift */,
 				A20000010000000000000095 /* RoutineSet.swift */,
+				A20000010000000000000110 /* SubscriptionPlan.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -203,6 +210,7 @@
 			isa = PBXGroup;
 			children = (
 				A20000010000000000000050 /* SettingsTab.swift */,
+				A20000010000000000000112 /* PaywallView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -223,6 +231,7 @@
 				A20000010000000000000102 /* AIRoutineGenerator.swift */,
 				A20000010000000000000103 /* AISplitGenerator.swift */,
 				A20000010000000000000104 /* AISetSuggester.swift */,
+				A20000010000000000000111 /* SubscriptionManager.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -361,6 +370,9 @@
 				A10000010000000000000104 /* AISetSuggester.swift in Sources */,
 				A10000010000000000000105 /* AIRoutineSheet.swift in Sources */,
 				A10000010000000000000106 /* AISplitSheet.swift in Sources */,
+				A10000010000000000000110 /* SubscriptionPlan.swift in Sources */,
+				A10000010000000000000111 /* SubscriptionManager.swift in Sources */,
+				A10000010000000000000112 /* PaywallView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

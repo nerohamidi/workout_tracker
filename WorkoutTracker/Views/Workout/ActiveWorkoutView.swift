@@ -129,6 +129,13 @@ struct ExerciseSection: View {
             if workoutExercise.isCardio {
                 CardioLogView(workoutExercise: workoutExercise)
             } else {
+                // Show past PRs as a target. `PersonalRecord.records(for:)` excludes
+                // in-progress workouts, so the current session never appears here —
+                // these are strictly historical maxes the user is trying to beat.
+                if let template = workoutExercise.exerciseTemplate {
+                    PersonalRecordsBanner(template: template)
+                }
+
                 ForEach(workoutExercise.sortedSets) { set in
                     SetRowView(exerciseSet: set)
                 }
@@ -191,6 +198,47 @@ struct SetRowView: View {
                     .foregroundStyle(.secondary)
             }
         }
+    }
+}
+
+/// Compact read-only banner that lists the user's existing PRs for an exercise as a
+/// reference target during an active workout. Renders nothing if there are no PRs yet
+/// (so the first-ever workout for an exercise stays uncluttered).
+private struct PersonalRecordsBanner: View {
+    let template: ExerciseTemplate
+    @AppStorage("useMetric") private var useMetric = true
+
+    private var records: [PersonalRecord] {
+        PersonalRecord.records(for: template)
+    }
+
+    var body: some View {
+        if !records.isEmpty {
+            HStack(alignment: .top, spacing: 6) {
+                Image(systemName: "trophy.fill")
+                    .font(.caption2)
+                    .foregroundStyle(.orange)
+                    .padding(.top, 2)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Personal Records")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+                    Text(records.map { "\($0.reps)×\(formatted($0.weight))\(useMetric ? "kg" : "lb")" }
+                        .joined(separator: "  ·  "))
+                        .font(.caption)
+                        .foregroundStyle(.primary)
+                }
+                Spacer(minLength: 0)
+            }
+            .listRowBackground(Color.orange.opacity(0.08))
+        }
+    }
+
+    private func formatted(_ value: Double) -> String {
+        value.truncatingRemainder(dividingBy: 1) == 0
+            ? String(format: "%.0f", value)
+            : String(format: "%.1f", value)
     }
 }
 

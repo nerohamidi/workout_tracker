@@ -11,8 +11,8 @@ import Foundation
 ///   1. `UserDefaults` value `geminiAPIKeyOverride` (set by the user in Settings)
 ///   2. `Secrets.geminiAPIKey` (baked in at build time from `.env`)
 enum GeminiClient {
-    /// Model to use. `gemini-2.5-flash` is fast and cheap and supports structured output.
-    static let model = "gemini-2.5-flash"
+    /// Model to use. `gemini-3.1-flash-lite-preview` is lightweight and supports structured output.
+    static let model = "gemini-3.1-flash-lite-preview"
 
     enum GeminiError: LocalizedError {
         case missingAPIKey

@@ -494,6 +494,63 @@ final class WorkoutTrackerTests: XCTestCase {
         XCTAssertEqual(records.first?.weight, 140)
     }
 
+    func testProgressionEmptyForCardio() {
+        let template = ExerciseTemplate(name: "Running", category: .cardio, muscleGroup: .cardio)
+        XCTAssertTrue(PersonalRecord.progressionByReps(for: template).isEmpty)
+    }
+
+    func testProgressionTakesMaxPerWorkoutPerRepCount() throws {
+        let template = ExerciseTemplate(name: "Squat", category: .strength, muscleGroup: .legs)
+        context.insert(template)
+
+        let day1 = Date(timeIntervalSince1970: 1_700_000_000)
+        let day2 = day1.addingTimeInterval(86400 * 7)
+        let day3 = day2.addingTimeInterval(86400 * 7)
+
+        // Day 1: 5x100, 5x95 (heaviest at 5 reps = 100)
+        try makeFinishedWorkout(template: template, sets: [(5, 100), (5, 95)], date: day1)
+        // Day 2: 5x110, 1x130 (heaviest at 5 reps = 110, also 1 rep series starts)
+        try makeFinishedWorkout(template: template, sets: [(5, 110), (1, 130)], date: day2)
+        // Day 3: 5x120
+        try makeFinishedWorkout(template: template, sets: [(5, 120)], date: day3)
+
+        let progression = PersonalRecord.progressionByReps(for: template)
+
+        // Two distinct rep counts: 1 and 5
+        XCTAssertEqual(Set(progression.keys), [1, 5])
+
+        // 5-rep series: three points, sorted by date, with the heaviest set per workout
+        let fives = progression[5] ?? []
+        XCTAssertEqual(fives.map(\.weight), [100, 110, 120])
+        XCTAssertEqual(fives.map(\.date), [day1, day2, day3])
+
+        // 1-rep series: just day 2
+        let ones = progression[1] ?? []
+        XCTAssertEqual(ones.count, 1)
+        XCTAssertEqual(ones.first?.weight, 130)
+    }
+
+    func testProgressionIgnoresInProgressWorkouts() throws {
+        let template = ExerciseTemplate(name: "Bench Press", category: .strength, muscleGroup: .chest)
+        context.insert(template)
+
+        // In-progress workout — should not show up in progression at all.
+        let inProgress = Workout()
+        inProgress.isCompleted = false
+        context.insert(inProgress)
+        let we = WorkoutExercise(order: 0)
+        inProgress.exercises.append(we)
+        we.exerciseTemplate = template
+        we.sets.append(ExerciseSet(setNumber: 1, reps: 5, weight: 200))
+        try context.save()
+
+        try makeFinishedWorkout(template: template, sets: [(5, 100)])
+
+        let progression = PersonalRecord.progressionByReps(for: template)
+        XCTAssertEqual(progression[5]?.count, 1)
+        XCTAssertEqual(progression[5]?.first?.weight, 100)
+    }
+
     func testPersonalRecordsTieGoesToEarlierDate() throws {
         let template = ExerciseTemplate(name: "OHP", category: .strength, muscleGroup: .shoulders)
         context.insert(template)

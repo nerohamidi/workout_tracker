@@ -40,6 +40,9 @@ struct ActiveWorkoutView: View {
             }
             .navigationTitle("Active Workout")
             .navigationBarTitleDisplayMode(.inline)
+            .navigationDestination(for: ExerciseTemplate.self) { template in
+                ExerciseDetailView(template: template)
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Discard") {
@@ -125,7 +128,7 @@ struct ExerciseSection: View {
     @Bindable var workoutExercise: WorkoutExercise
 
     var body: some View {
-        Section(header: Text(workoutExercise.exerciseTemplate?.name ?? "Exercise")) {
+        Section {
             if workoutExercise.isCardio {
                 CardioLogView(workoutExercise: workoutExercise)
             } else {
@@ -146,6 +149,20 @@ struct ExerciseSection: View {
                 } label: {
                     Label("Add Set", systemImage: "plus")
                         .font(.subheadline)
+                }
+            }
+        } header: {
+            HStack {
+                Text(workoutExercise.exerciseTemplate?.name ?? "Exercise")
+                Spacer()
+                if let template = workoutExercise.exerciseTemplate {
+                    NavigationLink(value: template) {
+                        Image(systemName: "chart.xyaxis.line")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Color.accentColor)
+                    .accessibilityLabel("View history and progression")
                 }
             }
         }

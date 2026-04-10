@@ -1,0 +1,82 @@
+{
+  "identifier" : "8B5A6D2E-3F1A-4C8B-9D7E-1A2B3C4D5E6F",
+  "type" : "Configuration",
+  "version" : 3,
+  "appPolicies" : {
+    "eula" : "",
+    "policies" : [
+      {
+        "locale" : "en_US",
+        "policyURL" : "",
+        "policyText" : ""
+      }
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "group.workouttracker.plans",
+      "localizations" : [
+        {
+          "description" : "Workout Tracker Plans",
+          "displayName" : "Plans",
+          "locale" : "en_US"
+        }
+      ],
+      "name" : "Plans",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "3.00",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "plus_001",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Flash model, 10 custom exercises, more AI generations",
+              "displayName" : "Plus",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.workouttracker.plus",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Plus",
+          "subscriptionGroupID" : "group.workouttracker.plans",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : []
+        },
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "5.00",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "pro_001",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Pro model, unlimited exercises and AI generations",
+              "displayName" : "Pro",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.workouttracker.pro",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Pro",
+          "subscriptionGroupID" : "group.workouttracker.plans",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : []
+        }
+      ]
+    }
+  ],
+  "settings" : {
+    "_applicationInternalID" : "app001",
+    "_developerTeamID" : "TEAM",
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : []
+  }
+}

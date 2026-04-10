@@ -90,6 +90,7 @@
 		A20000010000000000000110 /* SubscriptionPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPlan.swift; sourceTree = "<group>"; };
 		A20000010000000000000111 /* SubscriptionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionManager.swift; sourceTree = "<group>"; };
 		A20000010000000000000112 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
+		A20000010000000000000120 /* Configuration.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Configuration.storekit; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -137,6 +138,7 @@
 				A40000010000000000000060 /* Data */,
 				A40000010000000000000100 /* Services */,
 				A20000010000000000000003 /* Assets.xcassets */,
+				A20000010000000000000120 /* Configuration.storekit */,
 			);
 			path = WorkoutTracker;
 			sourceTree = "<group>";

@@ -10,9 +10,30 @@ import Foundation
 /// API key resolution order:
 ///   1. `UserDefaults` value `geminiAPIKeyOverride` (set by the user in Settings)
 ///   2. `Secrets.geminiAPIKey` (baked in at build time from `.env`)
+/// Available Gemini models. Persisted via `@AppStorage("geminiModel")`.
+enum GeminiModel: String, CaseIterable {
+    case flashLite = "gemini-3.1-flash-lite-preview"
+    case flash = "gemini-3-flash-preview"
+    case pro = "gemini-3.1-pro-preview"
+
+    var displayName: String {
+        switch self {
+        case .flashLite: return "Flash Lite"
+        case .flash:     return "Flash"
+        case .pro:       return "Pro"
+        }
+    }
+}
+
 enum GeminiClient {
-    /// Model to use. `gemini-3.1-flash-lite-preview` is lightweight and supports structured output.
-    static let model = "gemini-3.1-flash-lite-preview"
+    /// Resolve the model from user preference or default.
+    static var model: String {
+        let stored = UserDefaults.standard.string(forKey: "geminiModel") ?? ""
+        if let chosen = GeminiModel(rawValue: stored) {
+            return chosen.rawValue
+        }
+        return GeminiModel.flashLite.rawValue
+    }
 
     enum GeminiError: LocalizedError {
         case missingAPIKey

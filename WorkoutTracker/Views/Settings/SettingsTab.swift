@@ -4,6 +4,7 @@ struct SettingsTab: View {
     @AppStorage("useMetric") private var useMetric = true
     @AppStorage("appearanceMode") private var appearanceMode: AppearanceMode = .dark
     @AppStorage("geminiAPIKeyOverride") private var geminiAPIKeyOverride = ""
+    @AppStorage("geminiModel") private var geminiModel: GeminiModel = .flashLite
 
     var body: some View {
         NavigationStack {
@@ -54,22 +55,48 @@ struct SettingsTab: View {
                     // MARK: - Gemini
                     settingsCard {
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("Gemini API")
+                            Text("Gemini AI")
                                 .font(.caption.weight(.bold))
                                 .foregroundStyle(.secondary)
                                 .textCase(.uppercase)
 
-                            SecureField("API key (optional)", text: $geminiAPIKeyOverride)
-                                .font(.subheadline)
-                                .textInputAutocapitalization(.never)
-                                .autocorrectionDisabled()
-                                .padding(12)
-                                .background(Color(.systemGray5))
-                                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("Model")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                HStack(spacing: 8) {
+                                    ForEach(GeminiModel.allCases, id: \.self) { model in
+                                        Button {
+                                            geminiModel = model
+                                        } label: {
+                                            Text(model.displayName)
+                                                .font(.caption.weight(.semibold))
+                                                .frame(maxWidth: .infinity)
+                                                .padding(.vertical, 8)
+                                                .background(geminiModel == model ? Color.accentColor : Color(.systemGray5))
+                                                .foregroundStyle(geminiModel == model ? .white : .primary)
+                                                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
+                            }
 
-                            Text("Leave blank to use the built-in key.")
-                                .font(.caption)
-                                .foregroundStyle(.tertiary)
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("API Key")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                SecureField("API key (optional)", text: $geminiAPIKeyOverride)
+                                    .font(.subheadline)
+                                    .textInputAutocapitalization(.never)
+                                    .autocorrectionDisabled()
+                                    .padding(12)
+                                    .background(Color(.systemGray5))
+                                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                Text("Leave blank to use the built-in key.")
+                                    .font(.caption)
+                                    .foregroundStyle(.tertiary)
+                            }
                         }
                     }
 

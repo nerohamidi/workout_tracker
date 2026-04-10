@@ -35,6 +35,13 @@
 		A10000010000000000000083 /* SplitDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000083 /* SplitDetailView.swift */; };
 		A10000010000000000000090 /* PersonalRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000090 /* PersonalRecord.swift */; };
 		A10000010000000000000091 /* ExerciseDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000091 /* ExerciseDetailView.swift */; };
+		A10000010000000000000100 /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000100 /* Secrets.swift */; };
+		A10000010000000000000101 /* GeminiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000101 /* GeminiClient.swift */; };
+		A10000010000000000000102 /* AIRoutineGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000102 /* AIRoutineGenerator.swift */; };
+		A10000010000000000000103 /* AISplitGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000103 /* AISplitGenerator.swift */; };
+		A10000010000000000000104 /* AISetSuggester.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000104 /* AISetSuggester.swift */; };
+		A10000010000000000000105 /* AIRoutineSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000105 /* AIRoutineSheet.swift */; };
+		A10000010000000000000106 /* AISplitSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000106 /* AISplitSheet.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -68,6 +75,13 @@
 		A20000010000000000000083 /* SplitDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplitDetailView.swift; sourceTree = "<group>"; };
 		A20000010000000000000090 /* PersonalRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalRecord.swift; sourceTree = "<group>"; };
 		A20000010000000000000091 /* ExerciseDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseDetailView.swift; sourceTree = "<group>"; };
+		A20000010000000000000100 /* Secrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secrets.swift; sourceTree = "<group>"; };
+		A20000010000000000000101 /* GeminiClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiClient.swift; sourceTree = "<group>"; };
+		A20000010000000000000102 /* AIRoutineGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIRoutineGenerator.swift; sourceTree = "<group>"; };
+		A20000010000000000000103 /* AISplitGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISplitGenerator.swift; sourceTree = "<group>"; };
+		A20000010000000000000104 /* AISetSuggester.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISetSuggester.swift; sourceTree = "<group>"; };
+		A20000010000000000000105 /* AIRoutineSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIRoutineSheet.swift; sourceTree = "<group>"; };
+		A20000010000000000000106 /* AISplitSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISplitSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -113,6 +127,7 @@
 				A40000010000000000000010 /* Models */,
 				A40000010000000000000020 /* Views */,
 				A40000010000000000000060 /* Data */,
+				A40000010000000000000100 /* Services */,
 				A20000010000000000000003 /* Assets.xcassets */,
 			);
 			path = WorkoutTracker;
@@ -156,6 +171,8 @@
 				A20000010000000000000073 /* RoutineDetailView.swift */,
 				A20000010000000000000082 /* SplitFormView.swift */,
 				A20000010000000000000083 /* SplitDetailView.swift */,
+				A20000010000000000000105 /* AIRoutineSheet.swift */,
+				A20000010000000000000106 /* AISplitSheet.swift */,
 			);
 			path = Workout;
 			sourceTree = "<group>";
@@ -193,6 +210,18 @@
 				A20000010000000000000060 /* ExerciseLibrary.swift */,
 			);
 			path = Data;
+			sourceTree = "<group>";
+		};
+		A40000010000000000000100 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				A20000010000000000000100 /* Secrets.swift */,
+				A20000010000000000000101 /* GeminiClient.swift */,
+				A20000010000000000000102 /* AIRoutineGenerator.swift */,
+				A20000010000000000000103 /* AISplitGenerator.swift */,
+				A20000010000000000000104 /* AISetSuggester.swift */,
+			);
+			path = Services;
 			sourceTree = "<group>";
 		};
 		A40000010000000000000099 /* Products */ = {
@@ -321,6 +350,13 @@
 				A10000010000000000000083 /* SplitDetailView.swift in Sources */,
 				A10000010000000000000090 /* PersonalRecord.swift in Sources */,
 				A10000010000000000000091 /* ExerciseDetailView.swift in Sources */,
+				A10000010000000000000100 /* Secrets.swift in Sources */,
+				A10000010000000000000101 /* GeminiClient.swift in Sources */,
+				A10000010000000000000102 /* AIRoutineGenerator.swift in Sources */,
+				A10000010000000000000103 /* AISplitGenerator.swift in Sources */,
+				A10000010000000000000104 /* AISetSuggester.swift in Sources */,
+				A10000010000000000000105 /* AIRoutineSheet.swift in Sources */,
+				A10000010000000000000106 /* AISplitSheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

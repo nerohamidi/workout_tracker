@@ -12,6 +12,8 @@ struct WorkoutTab: View {
     @State private var showActiveWorkout = false
     @State private var showRoutineForm = false
     @State private var showSplitForm = false
+    @State private var showAIRoutineSheet = false
+    @State private var showAISplitSheet = false
 
     @Query(sort: \Workout.date, order: .reverse)
     private var allWorkouts: [Workout]
@@ -58,6 +60,12 @@ struct WorkoutTab: View {
                         Label("New Split", systemImage: "plus.circle.fill")
                     }
                     .disabled(routines.isEmpty)
+                    Button {
+                        showAISplitSheet = true
+                    } label: {
+                        Label("Generate with AI", systemImage: "sparkles")
+                    }
+                    .disabled(routines.isEmpty)
                 }
 
                 Section("Routines") {
@@ -81,6 +89,11 @@ struct WorkoutTab: View {
                         showRoutineForm = true
                     } label: {
                         Label("New Routine", systemImage: "plus.circle.fill")
+                    }
+                    Button {
+                        showAIRoutineSheet = true
+                    } label: {
+                        Label("Generate with AI", systemImage: "sparkles")
                     }
                 }
 
@@ -106,6 +119,12 @@ struct WorkoutTab: View {
             }
             .sheet(isPresented: $showSplitForm) {
                 SplitFormView()
+            }
+            .sheet(isPresented: $showAIRoutineSheet) {
+                AIRoutineSheet()
+            }
+            .sheet(isPresented: $showAISplitSheet) {
+                AISplitSheet()
             }
             .fullScreenCover(isPresented: $showActiveWorkout) {
                 if let workout = activeWorkout {

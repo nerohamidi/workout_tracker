@@ -3,6 +3,9 @@ import SwiftUI
 struct SettingsTab: View {
     @AppStorage("useMetric") private var useMetric = true
     @AppStorage("appearanceMode") private var appearanceMode: AppearanceMode = .dark
+    /// User-supplied Gemini API key. Empty string means "use the build-time default
+    /// from `Secrets.swift`". `GeminiClient.apiKey` reads from this exact key.
+    @AppStorage("geminiAPIKeyOverride") private var geminiAPIKeyOverride = ""
 
     var body: some View {
         NavigationStack {
@@ -28,8 +31,17 @@ struct SettingsTab: View {
                         .foregroundStyle(.secondary)
                 }
 
+                Section("Gemini API Key") {
+                    SecureField("Paste API key (optional)", text: $geminiAPIKeyOverride)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                    Text("Used by AI features. Leave blank to use the built-in key. Get one at aistudio.google.com.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
                 Section("About") {
-                    LabeledContent("Version", value: "1.10.0")
+                    LabeledContent("Version", value: "2.0.0")
                     LabeledContent("App", value: "Workout Tracker")
                 }
             }

@@ -126,6 +126,8 @@ struct ActiveWorkoutView: View {
 struct ExerciseSection: View {
     @Environment(\.modelContext) private var modelContext
     @Bindable var workoutExercise: WorkoutExercise
+    @State private var isSuggesting = false
+    @State private var suggestError: String?
 
     var body: some View {
         Section {
@@ -150,6 +152,22 @@ struct ExerciseSection: View {
                     Label("Add Set", systemImage: "plus")
                         .font(.subheadline)
                 }
+
+                if workoutExercise.exerciseTemplate != nil {
+                    Button {
+                        Task { await suggestSets() }
+                    } label: {
+                        HStack {
+                            if isSuggesting {
+                                ProgressView()
+                                    .padding(.trailing, 4)
+                            }
+                            Label("Suggest Sets with AI", systemImage: "sparkles")
+                                .font(.subheadline)
+                        }
+                    }
+                    .disabled(isSuggesting)
+                }
             }
         } header: {
             HStack {
@@ -166,12 +184,42 @@ struct ExerciseSection: View {
                 }
             }
         }
+        .alert("Couldn't Suggest Sets", isPresented: Binding(
+            get: { suggestError != nil },
+            set: { if !$0 { suggestError = nil } }
+        ), presenting: suggestError) { _ in
+            Button("OK", role: .cancel) {}
+        } message: { msg in
+            Text(msg)
+        }
     }
 
     private func addSet() {
         let nextNumber = (workoutExercise.sets.map(\.setNumber).max() ?? 0) + 1
         let set = ExerciseSet(setNumber: nextNumber, workoutExercise: workoutExercise)
         modelContext.insert(set)
+    }
+
+    /// Ask Gemini for a set scheme based on the user's PR history for this exercise
+    /// and append the suggestions as new ExerciseSet rows. Existing sets are kept —
+    /// the suggestions are added on top so the user can compare or remove them.
+    private func suggestSets() async {
+        guard let template = workoutExercise.exerciseTemplate else { return }
+        isSuggesting = true
+        defer { isSuggesting = false }
+        do {
+            let result = try await AISetSuggester.suggest(for: template)
+            var nextNumber = (workoutExercise.sets.map(\.setNumber).max() ?? 0) + 1
+            for suggestion in result.sets {
+                let set = ExerciseSet(setNumber: nextNumber, workoutExercise: workoutExercise)
+                set.reps = suggestion.reps
+                set.weight = suggestion.weight
+                modelContext.insert(set)
+                nextNumber += 1
+            }
+        } catch {
+            suggestError = error.localizedDescription
+        }
     }
 
     private func deleteSets(at offsets: IndexSet) {
